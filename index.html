@@ -1,389 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>מצפן מרחוק</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>חומרי לימוד</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
-  /* Instrument panel: big compass on the start side, phone pose + Earth's poles beside it */
-  :root {
-    --bg: #0d1117; --panel: #151b24; --line: #263041; --ink: #e8edf4; --muted: #8a96a8;
-    --north: #e5383b; --south: #2f6fde; --brass: #c9a227; --ok: #2fbf71; --warn: #e0a526;
-    --font: "Heebo", Arial, sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
-    color-scheme: dark;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
-  header {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-    padding: 14px max(16px, env(safe-area-inset-left)); border-bottom: 1px solid var(--line);
-  }
-  h1 { margin: 0; font-size: 24px; font-weight: 800; flex: 1 1 auto; }
-  h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; color: var(--muted); letter-spacing: .3px; }
-  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
-  .pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 14px; color: var(--muted); }
-  .pill.ok { color: var(--ok); border-color: var(--ok); }
-  .pill.warn { color: var(--warn); border-color: var(--warn); }
-  main {
-    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px;
-    padding: 18px max(16px, env(safe-area-inset-left)); max-width: 1400px; margin: auto;
-  }
-  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-  .compass-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  #compass { width: 100%; max-width: 640px; height: auto; display: block; }
-  .readout { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; justify-content: center; }
-  .readout .big { font-family: var(--mono); font-size: 56px; font-weight: 700; direction: ltr; }
-  .readout .dir { font-size: 28px; font-weight: 800; }
-  .readout .src { font-size: 14px; color: var(--muted); width: 100%; text-align: center; }
-  aside { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-  .pair .code { font-size: 18px; }
-  .pair .code b { font-family: var(--mono); font-size: 30px; letter-spacing: 4px; color: var(--brass); direction: ltr; display: inline-block; }
-  .pair-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  #qr { background: #fff; padding: 8px; border-radius: 8px; line-height: 0; }
-  #qr:empty { display: none; }
-  .help { font-size: 14px; color: var(--muted); margin: 8px 0 0; line-height: 1.6; }
-  .help a { color: #7fb2ff; word-break: break-all; }
-  .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-  button {
-    font: inherit; font-size: 14px; color: var(--ink); background: #1d2532; border: 1px solid var(--line);
-    border-radius: 8px; padding: 7px 14px; cursor: pointer;
-  }
-  button:hover { border-color: var(--brass); }
-  button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-  button.on { border-color: var(--brass); color: var(--brass); }
-
-  /* 3D phone on a table */
-  .pose { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
-  .scene { perspective: 700px; height: 240px; display: grid; place-items: center; }
-  .table {
-    width: 210px; height: 210px; border-radius: 50%; transform: rotateX(52deg); transform-style: preserve-3d;
-    background: radial-gradient(circle, #233044 0%, #172131 70%); border: 2px solid var(--line);
-    display: grid; place-items: center; position: relative;
-  }
-  .table .n { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); color: var(--north); font-weight: 800; }
-  .table .s { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); color: var(--muted); font-weight: 600; }
-  .table .e { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; }
-  .table .w { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; }
-  .phone { width: 64px; height: 128px; position: relative; transform-style: preserve-3d; }
-  .phone .f { position: absolute; }
-  .phone .front {
-    inset: 0; border-radius: 12px; transform: translateZ(5px);
-    background: linear-gradient(160deg, #2b3d5c, #101826); border: 3px solid #0a0e14;
-    display: grid; place-items: center; color: var(--north); font-size: 34px; font-weight: 800;
-  }
-  .phone .back { inset: 0; border-radius: 12px; transform: rotateY(180deg) translateZ(5px); background: #3a4250; }
-  .phone .et, .phone .eb { left: 0; width: 64px; height: 10px; background: #59606c; }
-  .phone .et { top: -5px; transform: rotateX(90deg); }
-  .phone .eb { top: 123px; transform: rotateX(90deg); }
-  .phone .el, .phone .er { top: 0; width: 10px; height: 128px; background: #4b525e; }
-  .phone .el { left: -5px; transform: rotateY(90deg); }
-  .phone .er { left: 59px; transform: rotateY(90deg); }
-  .level { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--line); position: relative; background: #101722; }
-  .level::before, .level::after { content: ""; position: absolute; background: var(--line); }
-  .level::before { left: 50%; top: 8px; bottom: 8px; width: 1px; }
-  .level::after { top: 50%; left: 8px; right: 8px; height: 1px; }
-  .level .ring { position: absolute; inset: 42px; border-radius: 50%; border: 1px dashed var(--muted); }
-  .level .bubble {
-    position: absolute; width: 26px; height: 26px; border-radius: 50%; left: 47px; top: 47px;
-    background: radial-gradient(circle at 35% 35%, #d9ffe9, var(--ok)); box-shadow: 0 0 10px rgba(47,191,113,.6);
-  }
-  .vals { display: grid; grid-template-columns: auto auto; gap: 4px 14px; font-size: 14px; margin-top: 10px; }
-  .vals span:nth-child(odd) { color: var(--muted); }
-  .vals span:nth-child(even) { font-family: var(--mono); direction: ltr; text-align: left; }
-  #earth { width: 100%; max-width: 360px; display: block; margin: auto; }
-  .earth-text { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 8px 0 0; }
-  .earth-text b { color: var(--ink); }
-  .fl { fill: none; stroke: rgba(201,162,39,.55); stroke-width: 1.4; stroke-dasharray: 5 7; animation: flow 1.2s linear infinite; }
-  @keyframes flow { to { stroke-dashoffset: -12; } }
-  @media (prefers-reduced-motion: reduce) { .fl { animation: none; } }
+:root{
+  --bg:#f3f5fa; --panel:#ffffff; --ink:#1b2333; --muted:#5b6578; --line:#dfe4ee;
+  --accent:#2d5bd7; --accent-soft:#e7eefc;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Heebo",Arial,sans-serif;font-size:17px;line-height:1.65}
+header{background:linear-gradient(135deg,#13213a,#24407a);color:#fff;padding:34px 16px 26px}
+header .wrap,main{max-width:900px;margin:auto}
+header h1{margin:0 0 6px;font-size:clamp(26px,4.5vw,40px);font-weight:800}
+header p{margin:0;opacity:.85}
+main{padding:24px 16px 60px;display:flex;flex-direction:column;gap:18px}
+.section-title{margin:14px 0 0;font-size:24px;font-weight:800;color:var(--ink);border-bottom:2px solid var(--line);padding-bottom:6px}
+.section-title:first-child{margin-top:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+.card h2{margin:0 0 4px;font-size:22px;display:flex;align-items:center;gap:10px}
+.card p{margin:0 0 14px;color:var(--muted)}
+.icon{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:10px;background:var(--accent-soft);font-size:20px;flex:none}
+.btns{display:flex;flex-wrap:wrap;gap:10px}
+.btn{display:inline-block;border-radius:11px;padding:10px 18px;font-weight:700;text-decoration:none;background:var(--accent);color:#fff}
+.btn:hover{filter:brightness(1.1)}
+.btn.secondary{background:var(--accent-soft);color:var(--accent)}
+audio,video{width:100%;border-radius:12px;display:block}
+video{background:#000}
+footer{text-align:center;color:var(--muted);font-size:14px;padding:20px}
 </style>
 </head>
 <body>
+
 <header>
-  <h1>מצפן מרחוק</h1>
-  <div class="pills">
-    <span id="pBroker" class="pill">שרת: מתחבר…</span>
-    <span id="pPhone" class="pill">טלפון: ממתין</span>
+  <div class="wrap">
+    <h1>חומרי לימוד</h1>
+    <p>מעבדות אינטראקטיביות, סרטונים, הסברים קוליים ודפי פעילות.</p>
   </div>
 </header>
 
 <main>
-  <section class="card compass-card">
-    <svg id="compass" viewBox="-230 -250 460 480" aria-label="מצפן">
-      <defs>
-        <radialGradient id="face" cx="0" cy="0" r="200" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#1b2433"/><stop offset="1" stop-color="#0f151f"/>
-        </radialGradient>
-        <linearGradient id="bezel" x1="0" y1="-210" x2="0" y2="210" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#e8c65a"/><stop offset=".5" stop-color="#8a6d18"/><stop offset="1" stop-color="#d9b445"/>
-        </linearGradient>
-        <linearGradient id="magN" x1="-14" x2="14" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#a61d20"/><stop offset=".45" stop-color="#ff5a5d"/><stop offset="1" stop-color="#a61d20"/>
-        </linearGradient>
-        <linearGradient id="magS" x1="-14" x2="14" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stop-color="#173f8a"/><stop offset=".45" stop-color="#5b93f5"/><stop offset="1" stop-color="#173f8a"/>
-        </linearGradient>
-        <clipPath id="fieldClip"><circle r="132"/></clipPath>
-      </defs>
-      <circle r="212" fill="url(#bezel)"/>
-      <g id="dial">
-        <circle r="200" fill="url(#face)"/>
-        <g id="ticks"></g>
-        <g clip-path="url(#fieldClip)" id="field"></g>
-        <!-- the needle is a bar magnet: red N end points to magnetic north -->
-        <g id="magnet">
-          <rect x="-14" y="-122" width="28" height="122" rx="4" fill="url(#magN)"/>
-          <rect x="-14" y="0" width="28" height="122" rx="4" fill="url(#magS)"/>
-          <text x="0" y="-96" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="20" fill="#fff">N</text>
-          <text x="0" y="112" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="20" fill="#fff">S</text>
-          <circle r="9" fill="#c9a227" stroke="#5c4a10" stroke-width="2"/>
-        </g>
-      </g>
-      <!-- fixed mark: where the top of the phone points -->
-      <polygon points="0,-206 -13,-232 13,-232" fill="#e8edf4"/>
-      <text x="0" y="-238" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">כיוון הטלפון</text>
-    </svg>
-    <div class="readout">
-      <div class="big"><span id="hdg">--</span>°</div>
-      <div class="dir" id="dirName">—</div>
-      <div class="src" id="src">מחכה לנתונים מהטלפון</div>
-    </div>
-  </section>
+  <h2 class="section-title">שערים לוגיים אוניברסליים</h2>
 
-  <aside>
-    <div class="card pair">
-      <h2>חיבור הטלפון</h2>
-      <div class="pair-row">
-        <div id="qr"></div>
-        <div>
-          <div class="code">קוד חיבור: <b id="code"></b></div>
-          <p class="help" id="pairHelp"></p>
-        </div>
-      </div>
-      <div class="buttons">
-        <button id="newCode" type="button">קוד חדש</button>
-        <button id="demo" type="button">הדגמה בלי טלפון</button>
-      </div>
-    </div>
+  <div class="card">
+    <h2><span class="icon">🔬</span>מעבדת NOR</h2>
+    <p>מעבדה אינטראקטיבית: בונים כל פונקציה לוגית משערי NOR בלבד – הדגמות, תרגול וגלריית מעגלים.</p>
+    <a class="btn" href="NOR-LAB.HTML">כניסה למעבדה ←</a>
+  </div>
 
-    <div class="card">
-      <h2>מצב הטלפון במרחב</h2>
-      <div class="pose">
-        <div class="scene">
-          <div class="table">
-            <span class="n">צ</span><span class="e">מז</span><span class="s">ד</span><span class="w">מע</span>
-            <div class="phone" id="phone">
-              <div class="f back"></div>
-              <div class="f et"></div><div class="f eb"></div><div class="f el"></div><div class="f er"></div>
-              <div class="f front">↑</div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="level" title="פלס מים"><div class="ring"></div><div class="bubble" id="bubble"></div></div>
-        </div>
-      </div>
-      <div class="vals">
-        <span>כיוון (סיבוב סביב הציר האנכי)</span><span id="vH">--</span>
-        <span>הטיה קדימה / אחורה (β)</span><span id="vB">--</span>
-        <span>הטיה ימינה / שמאלה (γ)</span><span id="vG">--</span>
-      </div>
-    </div>
+  <div class="card">
+    <h2><span class="icon">🧪</span>מעבדת NAND</h2>
+    <p>אותו רעיון עם שער אוניברסלי אחר: בונים כל פונקציה לוגית משערי NAND בלבד – הדגמות, תרגול וגלריית מעגלים.</p>
+    <a class="btn" href="NAND-LAB.html">כניסה למעבדה ←</a>
+  </div>
 
-    <div class="card">
-      <h2>הקטבים המגנטיים של כדור הארץ</h2>
-      <svg id="earth" viewBox="-170 -160 340 320" aria-label="כדור הארץ כמגנט">
-        <defs>
-          <radialGradient id="globe" cx="-30" cy="-35" r="130" gradientUnits="userSpaceOnUse">
-            <stop offset="0" stop-color="#3f86c9"/><stop offset="1" stop-color="#0d2c55"/>
-          </radialGradient>
-        </defs>
-        <g transform="rotate(11)">
-          <path class="fl" d="M0,58 C70,150 160,60 150,0 C160,-60 70,-150 0,-58"/>
-          <path class="fl" d="M0,58 C-70,150 -160,60 -150,0 C-160,-60 -70,-150 0,-58"/>
-          <path class="fl" d="M0,58 C40,110 100,50 100,0 C100,-50 40,-110 0,-58"/>
-          <path class="fl" d="M0,58 C-40,110 -100,50 -100,0 C-100,-50 -40,-110 0,-58"/>
-        </g>
-        <circle r="92" fill="url(#globe)"/>
-        <path d="M-60,-55 q20,-15 40,-5 t30,10 q10,20 -15,25 t-35,5 q-25,-10 -20,-35z M20,10 q25,-10 40,5 t5,30 q-20,25 -40,10 t-5,-45z" fill="#3c8a5a" opacity=".85"/>
-        <line x1="0" y1="-135" x2="0" y2="135" stroke="#8a96a8" stroke-dasharray="4 5"/>
-        <text x="0" y="-142" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#e8edf4">צפון גאוגרפי</text>
-        <text x="0" y="153" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">דרום גאוגרפי</text>
-        <g transform="rotate(11)">
-          <rect x="-11" y="-58" width="22" height="58" rx="3" fill="url(#magS)"/>
-          <rect x="-11" y="0" width="22" height="58" rx="3" fill="url(#magN)"/>
-          <text x="0" y="-40" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="15" fill="#fff">S</text>
-          <text x="0" y="52" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="15" fill="#fff">N</text>
-        </g>
-        <text x="62" y="-112" font-family="Heebo, Arial" font-size="12" fill="#c9a227">קוטב מגנטי צפוני</text>
-      </svg>
-      <p class="earth-text">
-        כדור הארץ מתנהג כמו מגנט ענק. ליד <b>הקוטב הצפוני הגאוגרפי</b> נמצא קוטב <b>S</b> של המגנט הזה, ולכן הוא מושך אליו את קצה <b style="color:var(--north)">N האדום</b> של מחט המצפן.
-        הציר המגנטי נוטה בכ-11° מציר הסיבוב, ולכן "צפון מגנטי" ו"צפון אמיתי" אינם בדיוק אותו כיוון.
-      </p>
+  <div class="card">
+    <h2><span class="icon">🎬</span>סרטון: סודות שער ה-NOR</h2>
+    <p>סרטון הסבר על שער NOR ועל הסיבה שהוא נחשב שער אוניברסלי.</p>
+    <video controls preload="metadata" src="סודות_שער_ה-NOR_.mp4"></video>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🎧</span>הסבר קולי: איך שער NOR בונה מחשב שלם</h2>
+    <p>האזנה להסבר על הדרך שבה שער אחד מספיק כדי לבנות את כל הלוגיקה של מחשב.</p>
+    <audio controls preload="metadata" src="איך_שער_NOR_בונה_מחשב_שלם%20(online-audio-converter.com).mp3"></audio>
+  </div>
+
+  <h2 class="section-title">פעילויות נוספות</h2>
+
+  <div class="card">
+    <h2><span class="icon">🥾</span>מתכנן הטיולים בישראל</h2>
+    <p>מקלידים שם של מקום בישראל ומקבלים את מזג האוויר עכשיו, תחזית ל-7 ימים, השעות הנוחות ביותר לטיול והמלצות ציוד.</p>
+    <a class="btn" href="israel_trip_weather.html">לתכנון טיול ←</a>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🌍</span>רעידות אדמה בעולם</h2>
+    <p>גלובוס אינטראקטיבי שמציג רעידות אדמה בעוצמה מעל 3.5 ברחבי העולם, עם בחירת טווח זמן.</p>
+    <a class="btn" href="earthquakes.html">לצפייה בגלובוס ←</a>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🔢</span>מספרים אי-זוגיים</h2>
+    <p>טבלת המספרים האי-זוגיים מ-1 עד 100.</p>
+    <a class="btn" href="odd_numbers.html">לדף המספרים ←</a>
+  </div>
+
+  <div class="card">
+    <h2><span class="icon">🧭</span>מצפן מרחוק</h2>
+    <p>מצפן שמציג במחשב את הכיוון שמודד חיישן המצפן של הטלפון, יחד עם הסבר על השדה המגנטי של כדור הארץ. פותחים את דף המצפן במחשב ואת דף החיישן בטלפון.</p>
+    <div class="btns">
+      <a class="btn" href="compass/index.html">דף המצפן (מחשב) ←</a>
+      <a class="btn secondary" href="compass/phone.html">חיישן המצפן (טלפון) ←</a>
     </div>
-  </aside>
+  </div>
 </main>
 
-<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-const BROKER = "wss://broker.hivemq.com:8884/mqtt";
-const PREFIX = "edu-compass-v1/";
-const DIRS = ["צפון", "צפון-מזרח", "מזרח", "דרום-מזרח", "דרום", "דרום-מערב", "מערב", "צפון-מערב"];
-const SVGNS = "http://www.w3.org/2000/svg";
-const $ = id => document.getElementById(id);
+<footer>חומרי לימוד · מערכות ספרתיות ומדעים</footer>
 
-// ---------- compass dial ----------
-function svg(tag, attrs, parent) {
-  const el = document.createElementNS(SVGNS, tag);
-  for (const k in attrs) el.setAttribute(k, attrs[k]);
-  parent.appendChild(el);
-  return el;
-}
-(function buildDial() {
-  const ticks = $("ticks");
-  for (let d = 0; d < 360; d += 5) {
-    const long = d % 30 === 0, mid = d % 10 === 0;
-    const r2 = long ? 166 : mid ? 174 : 180;
-    const a = (d - 90) * Math.PI / 180;
-    svg("line", {
-      x1: 188 * Math.cos(a), y1: 188 * Math.sin(a), x2: r2 * Math.cos(a), y2: r2 * Math.sin(a),
-      stroke: long ? "#e8edf4" : "#5d6a7e", "stroke-width": long ? 2.5 : 1.2
-    }, ticks);
-  }
-  const card = { 0: ["צ", "#e5383b"], 90: ["מז", "#e8edf4"], 180: ["ד", "#e8edf4"], 270: ["מע", "#e8edf4"] };
-  for (let d = 0; d < 360; d += 30) {
-    const g = svg("g", { transform: `rotate(${d})` }, ticks);
-    if (card[d]) {
-      const t = svg("text", { x: 0, y: -140, "text-anchor": "middle", "font-family": "Heebo, Arial", "font-weight": 800, "font-size": 26, fill: card[d][1] }, g);
-      t.textContent = card[d][0];
-    } else {
-      const t = svg("text", { x: 0, y: -146, "text-anchor": "middle", "font-family": "JetBrains Mono, monospace", "font-size": 13, fill: "#8a96a8" }, g);
-      t.textContent = d;
-    }
-  }
-  // magnetic field lines leaving N (top) and curving round to S (bottom)
-  const field = $("field");
-  for (const k of [45, 80, 120, 170]) {
-    for (const s of [1, -1]) {
-      svg("path", { class: "fl", d: `M0,-118 C${s * k},-230 ${s * k},230 0,118` }, field);
-    }
-  }
-})();
-
-// ---------- state + smooth animation ----------
-const target = { h: 0, b: 0, g: 0 };
-const cur = { h: 0, b: 0, g: 0 };
-let lastMsg = 0, demo = false, haveData = false;
-
-function shortest(from, to) { return ((to - from + 540) % 360) - 180; }
-function fmt(n) { return (Math.round(n * 10) / 10).toFixed(1); }
-
-function frame(t) {
-  if (demo) {
-    const s = t / 1000;
-    target.h = (s * 25) % 360;
-    target.b = 25 * Math.sin(s * 0.7);
-    target.g = 30 * Math.sin(s * 0.45);
-    haveData = true;
-  }
-  cur.h = (cur.h + shortest(cur.h, target.h) * 0.15 + 360) % 360;
-  cur.b += (target.b - cur.b) * 0.15;
-  cur.g += (target.g - cur.g) * 0.15;
-
-  $("dial").setAttribute("transform", `rotate(${-cur.h})`);
-  $("phone").style.transform = `rotateZ(${cur.h}deg) rotateX(${-cur.b}deg) rotateY(${cur.g}deg)`;
-  const clamp = v => Math.max(-1, Math.min(1, v));
-  $("bubble").style.transform = `translate(${-clamp(cur.g / 45) * 45}px, ${-clamp(cur.b / 45) * 45}px)`;
-
-  if (haveData) {
-    $("hdg").textContent = Math.round(cur.h).toString().padStart(3, "0");
-    $("dirName").textContent = DIRS[Math.round(cur.h / 45) % 8];
-    $("vH").textContent = fmt(cur.h) + "°";
-    $("vB").textContent = fmt(cur.b) + "°";
-    $("vG").textContent = fmt(cur.g) + "°";
-  }
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-
-// ---------- pairing code ----------
-function newCode() { return String(Math.floor(100000 + Math.random() * 900000)); }
-let code = null;
-try { code = localStorage.getItem("compass-code"); } catch (e) {}
-if (!/^\d{6}$/.test(code || "")) code = newCode();
-
-function showPairing() {
-  try { localStorage.setItem("compass-code", code); } catch (e) {}
-  $("code").textContent = code;
-  $("qr").innerHTML = "";
-  const help = $("pairHelp");
-  if (location.protocol === "https:" || location.protocol === "http:") {
-    const url = new URL("phone.html", location.href);
-    url.searchParams.set("code", code);
-    if (window.QRCode) new QRCode($("qr"), { text: url.href, width: 132, height: 132 });
-    help.innerHTML = "";
-    help.append("סרוק את הקוד במצלמת הטלפון, או פתח בטלפון: ");
-    const a = document.createElement("a"); a.href = url.href; a.textContent = url.href; a.target = "_blank";
-    help.append(a);
-  } else {
-    help.textContent = "הדף נפתח מקובץ מקומי. פתח בטלפון את phone.html מכתובת האתר (https) והקלד את הקוד.";
-  }
-}
-
-// ---------- MQTT ----------
-let client = null, topic = null;
-function setPill(id, text, cls) { const p = $(id); p.textContent = text; p.className = "pill" + (cls ? " " + cls : ""); }
-
-function subscribe() {
-  if (!client || !client.connected) return;
-  if (topic) client.unsubscribe(topic);
-  topic = PREFIX + code;
-  client.subscribe(topic);
-}
-
-function connect() {
-  if (!window.mqtt) { setPill("pBroker", "שרת: הספרייה לא נטענה — בדוק חיבור לאינטרנט", "warn"); return; }
-  client = mqtt.connect(BROKER, { clientId: "cmpd_" + Math.random().toString(16).slice(2, 10), reconnectPeriod: 2000, connectTimeout: 8000 });
-  client.on("connect", () => { setPill("pBroker", "שרת: מחובר", "ok"); subscribe(); });
-  client.on("reconnect", () => setPill("pBroker", "שרת: מתחבר מחדש…", "warn"));
-  client.on("offline", () => setPill("pBroker", "שרת: מנותק", "warn"));
-  client.on("message", (t, payload) => {
-    if (t !== topic) return;
-    let m;
-    try { m = JSON.parse(payload.toString()); } catch (e) { return; }
-    if (typeof m.h !== "number" || !isFinite(m.h)) return;
-    target.h = ((m.h % 360) + 360) % 360;
-    if (typeof m.b === "number" && isFinite(m.b)) target.b = Math.max(-180, Math.min(180, m.b));
-    if (typeof m.g === "number" && isFinite(m.g)) target.g = Math.max(-90, Math.min(90, m.g));
-    lastMsg = Date.now();
-    haveData = true;
-    if (demo) toggleDemo(false);
-    $("src").textContent = m.abs ? "כיוון ביחס לצפון המגנטי, נמדד במצפן הטלפון" : "שים לב: הדפדפן בטלפון מוסר כיוון יחסי בלבד, לא ביחס לצפון";
-  });
-}
-
-setInterval(() => {
-  if (demo) return;
-  if (Date.now() - lastMsg < 2500) setPill("pPhone", "טלפון: משדר", "ok");
-  else setPill("pPhone", lastMsg ? "טלפון: הפסיק לשדר" : "טלפון: ממתין", lastMsg ? "warn" : "");
-}, 500);
-
-function toggleDemo(on) {
-  demo = on;
-  $("demo").classList.toggle("on", on);
-  $("demo").textContent = on ? "עצור הדגמה" : "הדגמה בלי טלפון";
-  if (on) { setPill("pPhone", "הדגמה", "warn"); $("src").textContent = "הדגמה: נתונים מדומים"; }
-}
-$("demo").addEventListener("click", () => toggleDemo(!demo));
-$("newCode").addEventListener("click", () => { code = newCode(); showPairing(); subscribe(); lastMsg = 0; });
-
-showPairing();
-connect();
-</script>
 </body>
 </html>

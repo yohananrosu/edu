@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מתכנן הטיולים בישראל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5fa; --panel:#ffffff; --ink:#1b2333; --muted:#5b6578; --line:#dfe4ee;
+  --accent:#2d5bd7; --accent-soft:#e7eefc;
+  --good:#1f8a4c; --good-soft:#e3f5ea;
+  --warn:#b26a00; --warn-soft:#fdf1dc;
+  --bad:#c0392b; --bad-soft:#fbe5e2;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1522; --panel:#18212f; --ink:#e7ecf5; --muted:#9aa6bb; --line:#2a3546;
+    --accent:#6f95ff; --accent-soft:#1f2c48;
+    --good:#4cc380; --good-soft:#163222;
+    --warn:#f0a63a; --warn-soft:#3a2b12;
+    --bad:#ff7a6b; --bad-soft:#3c1c19;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1522; --panel:#18212f; --ink:#e7ecf5; --muted:#9aa6bb; --line:#2a3546;
+  --accent:#6f95ff; --accent-soft:#1f2c48;
+  --good:#4cc380; --good-soft:#163222;
+  --warn:#f0a63a; --warn-soft:#3a2b12;
+  --bad:#ff7a6b; --bad-soft:#3c1c19;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Heebo",Arial,sans-serif;font-size:17px;line-height:1.6}
+header{background:linear-gradient(135deg,#13213a,#24407a);color:#fff;padding:34px 16px 28px}
+header .wrap,main{max-width:760px;margin:auto}
+header h1{margin:0 0 4px;font-size:clamp(28px,5vw,42px);font-weight:800}
+header a{color:#cfdcff;font-size:14px;text-decoration:none}
+main{padding:24px 16px 60px;display:flex;flex-direction:column;gap:16px}
+
+.search{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px}
+.search label{display:block;font-size:22px;font-weight:700;margin-bottom:12px}
+.search-row{display:flex;gap:10px;flex-wrap:wrap}
+.search input{flex:1 1 220px;min-width:0;font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.search input:focus{outline:none;border-color:var(--accent)}
+.btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:12px;padding:12px 20px;background:var(--accent);color:#fff;cursor:pointer}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.6;cursor:wait}
+.hint{margin:10px 0 0;color:var(--muted);font-size:14px}
+.alts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.msg{border-radius:14px;padding:14px 18px;font-weight:500}
+.msg.error{background:var(--bad-soft);color:var(--bad)}
+.msg.info{background:var(--accent-soft);color:var(--accent)}
+
+.section-title{margin:10px 0 0;font-size:22px;font-weight:800;border-bottom:2px solid var(--line);padding-bottom:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px;display:flex;align-items:center;gap:18px}
+.card .ic{flex:none;width:64px;height:64px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;font-size:34px}
+.card .lbl{color:var(--muted);font-size:16px;font-weight:500}
+.card .val{font-size:clamp(26px,6vw,36px);font-weight:800;line-height:1.2}
+.card .sub{color:var(--muted);font-size:15px}
+.card.place{background:linear-gradient(135deg,var(--accent-soft),var(--panel))}
+
+.days{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.days .chip{flex:none;padding:8px 14px;font-size:15px}
+
+.verdict{border-radius:18px;padding:20px 22px}
+.verdict h3{margin:0 0 6px;font-size:24px}
+.verdict.good{background:var(--good-soft);color:var(--good)}
+.verdict.warn{background:var(--warn-soft);color:var(--warn)}
+.verdict.bad{background:var(--bad-soft);color:var(--bad)}
+.verdict p{margin:0;color:var(--ink)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+.panel h3{margin:0 0 10px;font-size:20px}
+.panel ul{margin:0;padding-inline-start:20px}
+.panel li{margin:4px 0}
+
+.hours{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.hour{flex:none;width:76px;text-align:center;border:1px solid var(--line);border-radius:12px;padding:8px 4px;background:var(--bg)}
+.hour.best{border-color:var(--good);background:var(--good-soft)}
+.hour .t{font-size:13px;color:var(--muted)}
+.hour .e{font-size:24px}
+.hour .d{font-weight:700}
+.hour .p{font-size:12px;color:var(--accent)}
+
+footer{text-align:center;color:var(--muted);font-size:13px;padding:10px 16px 30px}
+footer a{color:var(--muted)}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>מתכנן הטיולים בישראל</h1>
+    <a href="index.html">→ חזרה לדף הבית</a>
+  </div>
+</header>
+
+<main>
+  <form class="search" id="searchForm">
+    <label for="place">לאן אתה רוצה לטייל ?</label>
+    <div class="search-row">
+      <input id="place" type="text" placeholder="לדוגמה: עין גדי, מצפה רמון, ראש פינה" autocomplete="off" required>
+      <button class="btn" id="goBtn" type="submit">בדוק את מזג האויר</button>
+    </div>
+    <p class="hint">אפשר להקליד בעברית או באנגלית. החיפוש מוגבל למקומות בישראל.</p>
+    <div class="alts" id="alts" hidden></div>
+  </form>
+
+  <div class="msg" id="msg" hidden></div>
+
+  <div id="results" hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="section-title">מזג האוויר עכשיו</h2>
+      <div id="nowCards" style="display:flex;flex-direction:column;gap:14px"></div>
+
+      <h2 class="section-title">תכנון יום הטיול</h2>
+      <div class="days" id="days"></div>
+      <div class="verdict" id="verdict"></div>
+      <div id="dayCards" style="display:flex;flex-direction:column;gap:14px"></div>
+      <div class="panel">
+        <h3>תחזית לפי שעות</h3>
+        <div class="hours" id="hours"></div>
+        <p class="hint" id="bestHint"></p>
+      </div>
+      <div class="panel">
+        <h3>מה לקחת ולמה לשים לב</h3>
+        <ul id="tips"></ul>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>נתוני מזג אוויר ומיקום: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> · אזור זמן: ירושלים</footer>
+
+<script>
+const GEO_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+const TZ = "Asia/Jerusalem";
+
+// קודי מזג אוויר של WMO
+const WEATHER = {
+  0:["שמיים בהירים","☀️","🌙"], 1:["בהיר ברובו","🌤️","🌙"], 2:["מעונן חלקית","⛅","☁️"], 3:["מעונן","☁️","☁️"],
+  45:["ערפל","🌫️"], 48:["ערפל קופא","🌫️"],
+  51:["טפטוף קל","🌦️"], 53:["טפטוף","🌦️"], 55:["טפטוף כבד","🌧️"],
+  56:["טפטוף קופא","🌧️"], 57:["טפטוף קופא כבד","🌧️"],
+  61:["גשם קל","🌦️"], 63:["גשם","🌧️"], 65:["גשם כבד","🌧️"],
+  66:["גשם קופא","🌧️"], 67:["גשם קופא כבד","🌧️"],
+  71:["שלג קל","🌨️"], 73:["שלג","🌨️"], 75:["שלג כבד","❄️"], 77:["גרגרי שלג","🌨️"],
+  80:["ממטרים קלים","🌦️"], 81:["ממטרים","🌧️"], 82:["ממטרים עזים","⛈️"],
+  85:["ממטרי שלג","🌨️"], 86:["ממטרי שלג כבדים","❄️"],
+  95:["סופת רעמים","⛈️"], 96:["סופת רעמים עם ברד","⛈️"], 99:["סופת רעמים עם ברד כבד","⛈️"]
+};
+const weatherText = c => (WEATHER[c] || ["לא ידוע"])[0];
+const weatherIcon = (c, isDay = 1) => {
+  const w = WEATHER[c] || [, "🌡️"];
+  return (!isDay && w[2]) ? w[2] : w[1];
+};
+const isStorm = c => c >= 95;
+const isWet = c => (c >= 51 && c <= 67) || (c >= 80 && c <= 82);
+
+const WIND_DIRS = ["צפון","צפון-מזרח","מזרח","דרום-מזרח","דרום","דרום-מערב","מערב","צפון-מערב"];
+const windDir = deg => WIND_DIRS[Math.round(deg / 45) % 8];
+
+const uvText = uv => uv < 3 ? "נמוך" : uv < 6 ? "בינוני" : uv < 8 ? "גבוה" : uv < 11 ? "גבוה מאוד" : "קיצוני";
+const r = n => Math.round(n);
+const hhmm = iso => iso.slice(11, 16);
+const dayLabel = (dateStr, i) => {
+  if (i === 0) return "היום";
+  if (i === 1) return "מחר";
+  return new Date(dateStr + "T12:00").toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
+let state = { place: null, data: null, dayIndex: 0, alts: [] };
+
+function showMsg(text, type = "info") {
+  $("msg").textContent = text;
+  $("msg").className = "msg " + type;
+  $("msg").hidden = false;
+}
+function hideMsg() { $("msg").hidden = true; }
+
+async function getJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("השרת החזיר שגיאה " + res.status);
+  return res.json();
+}
+
+async function findPlace(name) {
+  const params = new URLSearchParams({ name, count: 10, language: "he", format: "json", countryCode: "IL" });
+  const data = await getJSON(GEO_URL + "?" + params);
+  if (data.results && data.results.length) return { results: data.results };
+
+  // אין תוצאה בישראל – בודקים אם המקום קיים במדינה אחרת כדי לתת הודעה ברורה
+  const world = new URLSearchParams({ name, count: 1, language: "he", format: "json" });
+  const other = await getJSON(GEO_URL + "?" + world);
+  return { results: [], elsewhere: other.results && other.results[0] };
+}
+
+async function fetchWeather(lat, lon) {
+  const params = new URLSearchParams({
+    latitude: lat,
+    longitude: lon,
+    timezone: TZ,
+    forecast_days: 7,
+    current: "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,uv_index",
+    hourly: "temperature_2m,apparent_temperature,precipitation_probability,weather_code,is_day",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset"
+  });
+  return getJSON(FORECAST_URL + "?" + params);
+}
+
+function card(icon, label, value, sub = "", extraClass = "") {
+  return `<div class="card ${extraClass}">
+    <div class="ic">${icon}</div>
+    <div><div class="lbl">${label}</div><div class="val">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>
+  </div>`;
+}
+
+function placeLine(p) {
+  return esc([p.admin1, p.country].filter(Boolean).join(", "));
+}
+
+function renderNow() {
+  const { place, data } = state;
+  const c = data.current;
+  const u = data.current_units;
+  const today = data.daily;
+  $("nowCards").innerHTML = [
+    card("📍", "שם המקום", esc(place.name),placeLine(place) + ` · גובה ${r(place.elevation ?? data.elevation)} מ'`, "place"),
+    card("🌡️", "טמפרטורה נוכחית", `${r(c.temperature_2m)}°C`, `היום: ${r(today.temperature_2m_min[0])}° – ${r(today.temperature_2m_max[0])}°`),
+    card("🤒", "טמפרטורה מורגשת", `${r(c.apparent_temperature)}°C`),
+    card("💧", "לחות יחסית", `${r(c.relative_humidity_2m)}%`),
+    card(weatherIcon(c.weather_code, c.is_day), "מצב השמיים", weatherText(c.weather_code), `כיסוי עננים: ${r(c.cloud_cover)}%`),
+    card("💨", "רוח", `${r(c.wind_speed_10m)} קמ"ש`, `מכיוון ${windDir(c.wind_direction_10m)} · משבים עד ${r(c.wind_gusts_10m)} קמ"ש`),
+    card("🌂", "משקעים כרגע", `${c.precipitation} ${u.precipitation}`),
+    card("🕶️", "מדד קרינת UV", `${c.uv_index.toFixed(1)}`, uvText(c.uv_index)),
+    card("🌅", "זריחה ושקיעה", `${hhmm(today.sunrise[0])} · ${hhmm(today.sunset[0])}`)
+  ].join("");
+}
+
+function renderDays() {
+  const d = state.data.daily;
+  $("days").innerHTML = d.time.map((t, i) =>
+    `<button type="button" class="chip${i === state.dayIndex ? " active" : ""}" data-i="${i}">${weatherIcon(d.weather_code[i])} ${dayLabel(t, i)}</button>`
+  ).join("");
+}
+
+function assessDay(i) {
+  const d = state.data.daily;
+  const tmax = d.temperature_2m_max[i], tmin = d.temperature_2m_min[i];
+  const feelMax = d.apparent_temperature_max[i];
+  const rain = d.precipitation_probability_max[i] ?? 0;
+  const rainSum = d.precipitation_sum[i] ?? 0;
+  const wind = d.wind_speed_10m_max[i], uv = d.uv_index_max[i], code = d.weather_code[i];
+
+  let score = 100;
+  if (isStorm(code)) score -= 40;
+  if (rain >= 60) score -= 30; else if (rain >= 30) score -= 15;
+  if (feelMax >= 36) score -= 30; else if (feelMax >= 31) score -= 12;
+  if (tmax < 12) score -= 15;
+  if (wind >= 45) score -= 25; else if (wind >= 30) score -= 10;
+
+  const tips = ["💧 מים – לפחות 3 ליטר לאדם ליום טיול, יותר בימים חמים."];
+  if (uv >= 6) tips.push(`🧢 כובע, משקפי שמש וקרם הגנה – מדד UV ${uv.toFixed(0)} (${uvText(uv)}).`);
+  if (feelMax >= 31) tips.push("⏰ כדאי לצאת מוקדם בבוקר ולהעדיף מסלולים מוצלים או מסלולי מים. לנוח בשעות הצהריים.");
+  if (feelMax >= 36) tips.push("🔥 עומס חום כבד – לא מומלץ לצאת למסלולים חשופים או מדבריים.");
+  if (tmin < 12) tips.push(`🧥 שכבות לבוש חמות – בבוקר ובערב הטמפרטורה יורדת ל-${r(tmin)}°.`);
+  if (rain >= 30 || rainSum > 0.5) tips.push(`☔ מעיל גשם ונעליים עמידות למים – סיכוי לגשם ${rain}%.`);
+  if (rain >= 30 || isStorm(code)) tips.push("⚠️ גשם עלול לגרום לשיטפונות בנחלים ובמדבר, גם כשאצלך לא יורד גשם. הימנע מאפיקי נחלים ובדוק התרעות לפני היציאה.");
+  if (wind >= 30) tips.push(`🌬️ רוח חזקה (עד ${r(wind)} קמ"ש) – זהירות במצוקים ובנקודות תצפית חשופות.`);
+  if (isStorm(code)) tips.push("⛈️ צפויות סופות רעמים – הימנע ממקומות גבוהים וחשופים.");
+  tips.push(`🌇 השקיעה ב-${hhmm(d.sunset[i])} – תכנן לסיים את המסלול לפני החשכה.`);
+
+  let level, title, text;
+  if (score >= 75) { level = "good"; title = "✅ יום מצוין לטיול"; text = "מזג האוויר נוח ומתאים לרוב סוגי המסלולים."; }
+  else if (score >= 50) { level = "warn"; title = "⚠️ מתאים לטיול עם הכנה מתאימה"; text = "אפשר לטייל, אבל כדאי לבחור מסלול בהתאם ולשים לב להמלצות למטה."; }
+  else { level = "bad"; title = "⛔ מומלץ לשקול יום אחר"; text = "התנאים הצפויים פחות נוחים לטיול. בדוק את הימים האחרים בשבוע."; }
+
+  return { level, title, text, tips, tmax, tmin, feelMax, rain, rainSum, wind, uv, code };
+}
+
+function renderDay() {
+  const i = state.dayIndex;
+  const d = state.data.daily;
+  const a = assessDay(i);
+
+  $("verdict").className = "verdict " + a.level;
+  $("verdict").innerHTML = `<h3>${a.title}</h3><p>${dayLabel(d.time[i], i)}: ${a.text}</p>`;
+
+  $("dayCards").innerHTML = [
+    card(weatherIcon(a.code), "תחזית כללית", weatherText(a.code)),
+    card("🌡️", "טמפרטורות", `${r(a.tmin)}° – ${r(a.tmax)}°`, `מורגשת עד ${r(a.feelMax)}°`),
+    card("☔", "סיכוי לגשם", `${a.rain}%`, `כמות צפויה: ${a.rainSum} מ"מ`),
+    card("💨", "רוח מרבית", `${r(a.wind)} קמ"ש`),
+    card("🕶️", "UV מרבי", `${a.uv.toFixed(1)}`, uvText(a.uv))
+  ].join("");
+
+  // שעות האור של היום הנבחר
+  const h = state.data.hourly;
+  const date = d.time[i];
+  const idx = h.time.map((t, k) => k).filter(k => h.time[k].startsWith(date) && +h.time[k].slice(11, 13) >= 6 && +h.time[k].slice(11, 13) <= 20);
+
+  // חלון של 3 שעות רצופות עם התנאים הנוחים ביותר (טמפרטורה מורגשת קרובה ל-22° וסיכוי גשם נמוך)
+  const nowHour = new Date().toLocaleString("sv-SE", { timeZone: TZ }).slice(0, 13).replace(" ", "T");
+  const usable = idx.filter(k => i > 0 || h.time[k].slice(0, 13) >= nowHour);
+  const cost = k => Math.abs(h.apparent_temperature[k] - 22) + (h.precipitation_probability[k] ?? 0) / 4 + (isStorm(h.weather_code[k]) ? 30 : 0);
+  let best = -1, bestCost = Infinity;
+  for (let s = 0; s + 2 < usable.length; s++) {
+    if (usable[s + 2] - usable[s] !== 2) continue;
+    const c = cost(usable[s]) + cost(usable[s + 1]) + cost(usable[s + 2]);
+    if (c < bestCost) { bestCost = c; best = s; }
+  }
+  const bestSet = best >= 0 ? new Set(usable.slice(best, best + 3)) : new Set();
+
+  $("hours").innerHTML = idx.map(k => `<div class="hour${bestSet.has(k) ? " best" : ""}">
+      <div class="t">${hhmm(h.time[k])}</div>
+      <div class="e">${weatherIcon(h.weather_code[k], h.is_day[k])}</div>
+      <div class="d">${r(h.temperature_2m[k])}°</div>
+      <div class="p">☔ ${h.precipitation_probability[k] ?? 0}%</div>
+    </div>`).join("");
+
+  $("bestHint").textContent = best >= 0
+    ? `השעות הנוחות ביותר לפעילות בחוץ: ${hhmm(h.time[usable[best]])} – ${String(+h.time[usable[best + 2]].slice(11, 13) + 1).padStart(2, "0")}:00 (מסומנות בירוק).`
+    : "לא נותרו היום מספיק שעות אור לחישוב חלון מומלץ – בחר יום אחר.";
+
+  $("tips").innerHTML = a.tips.map(t => `<li>${t}</li>`).join("");
+}
+
+function renderAlts() {
+  const box = $("alts");
+  if (state.alts.length < 2) { box.hidden = true; return; }
+  box.innerHTML = `<span class="hint" style="margin:0;align-self:center">התכוונת ל:</span>` +
+    state.alts.map((p, k) => `<button type="button" class="chip${p.id === state.place.id ? " active" : ""}" data-k="${k}">${esc(p.name)}${p.admin1 ? " (" + esc(p.admin1) + ")" : ""}</button>`).join("");
+  box.hidden = false;
+}
+
+async function loadPlace(place) {
+  state.place = place;
+  state.dayIndex = 0;
+  renderAlts();
+  showMsg(`טוען את מזג האוויר עבור ${place.name}…`);
+  state.data = await fetchWeather(place.latitude, place.longitude);
+  hideMsg();
+  renderNow();
+  renderDays();
+  renderDay();
+  $("results").hidden = false;
+}
+
+$("searchForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = $("place").value.trim();
+  if (!name) return;
+  const btn = $("goBtn");
+  btn.disabled = true;
+  $("results").hidden = true;
+  $("alts").hidden = true;
+  showMsg("מחפש את המקום…");
+  try {
+    const found = await findPlace(name);
+    if (!found.results.length) {
+      state.alts = [];
+      if (found.elsewhere) {
+        showMsg(`"${name}" נמצא ב${found.elsewhere.country || "מדינה אחרת"}, לא בישראל. נסה שם של מקום בישראל.`, "error");
+      } else {
+        showMsg(`לא מצאתי מקום בשם "${name}". נסה איות אחר, או שם של עיר או יישוב סמוך.`, "error");
+      }
+      return;
+    }
+    state.alts = found.results;
+    await loadPlace(found.results[0]);
+  } catch (err) {
+    showMsg("לא הצלחתי לקבל נתונים: " + err.message + ". בדוק את החיבור לאינטרנט ונסה שוב.", "error");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+$("alts").addEventListener("click", async e => {
+  const b = e.target.closest("[data-k]");
+  if (!b) return;
+  try { await loadPlace(state.alts[+b.dataset.k]); }
+  catch (err) { showMsg("לא הצלחתי לקבל נתונים: " + err.message, "error"); }
+});
+
+$("days").addEventListener("click", e => {
+  const b = e.target.closest("[data-i]");
+  if (!b) return;
+  state.dayIndex = +b.dataset.i;
+  renderDays();
+  renderDay();
+});
+</script>
+</body>
+</html>
