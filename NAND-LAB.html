@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מעבדת NAND</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5fa; --panel:#ffffff; --ink:#1b2333; --muted:#5b6578; --line:#dfe4ee;
+  --accent:#2d5bd7; --accent-soft:#e7eefc; --good:#14935a; --good-soft:#e3f6ec; --bad:#d23b3b; --bad-soft:#fdeaea;
+  --board:#0f1a2c; --board-grid:#16243b; --wire-off:#3f5272; --wire-on:#ff7a3d; --gate:#cfd9ec; --gate-hi:#ffd2b8;
+  --led-on:#ff3434; --led-off:#4a2328;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Heebo",Arial,sans-serif;font-size:17px;line-height:1.65}
+header.top{background:linear-gradient(135deg,#1a1640,#3b2f86);color:#fff;padding:34px 16px 26px}
+header.top .wrap{max-width:1100px;margin:auto}
+header.top h1{margin:0 0 6px;font-size:clamp(26px,4.5vw,40px);font-weight:800;letter-spacing:.3px}
+header.top p{margin:0;opacity:.85;max-width:720px}
+nav.tabs{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{max-width:1100px;margin:auto;display:flex;gap:4px;overflow-x:auto;padding:0 12px}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);font-weight:600;padding:12px 14px;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs a.active,nav.tabs a:hover{color:var(--accent);border-color:var(--accent)}
+main{max-width:1100px;margin:auto;padding:8px 16px 60px}
+section{padding-top:30px}
+h2{font-size:clamp(22px,3.4vw,30px);margin:0 0 6px;font-weight:800}
+h2 .num{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--accent);color:#fff;font-size:18px;margin-left:10px;vertical-align:middle}
+h3{margin:0 0 8px;font-size:21px}
+.lead{color:var(--muted);margin:0 0 18px;max-width:780px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.math{direction:ltr;unicode-bidi:isolate;font-family:"JetBrains Mono",Consolas,monospace;font-weight:500;white-space:nowrap}
+.mathline{direction:ltr;text-align:center;background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:10px 0;font-family:"JetBrains Mono",Consolas,monospace;font-size:17px;overflow-x:auto}
+.ov{display:inline-block;border-top:1.6px solid currentColor;padding-top:1px;line-height:1.15}
+.tip{background:#fff8e6;border:1px solid #f3dfa6;border-radius:12px;padding:10px 14px;font-size:15.5px;margin-top:12px}
+.badge{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:700;border-radius:999px;padding:2px 12px;font-size:14px}
+.badge.gray{background:#eef1f6;color:var(--muted)}
+
+/* rig = switches + board */
+.rig{display:flex;flex-direction:column;gap:12px}
+.switches{display:flex;gap:12px;flex-wrap:wrap}
+.sw{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:#fff;border-radius:14px;padding:8px 14px;cursor:pointer;font:inherit;color:var(--ink);transition:.15s}
+.sw:hover{border-color:var(--accent)}
+.sw:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sw .lbl{font-weight:800;font-size:20px;font-family:"JetBrains Mono",monospace}
+.sw .track{width:52px;height:28px;border-radius:999px;background:#c9d1df;position:relative;transition:.2s}
+.sw .knob{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.sw.on .track{background:var(--wire-on)}
+.sw.on .knob{right:27px}
+.sw .val{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:18px;min-width:12px}
+.board{background:var(--board);background-image:radial-gradient(var(--board-grid) 1.2px,transparent 1.2px);background-size:18px 18px;border-radius:14px;padding:6px;overflow-x:auto}
+.board svg{display:block;width:100%;height:auto;min-width:300px;direction:ltr}
+.readout{display:flex;align-items:center;gap:10px;font-weight:600}
+.readout .pill{border-radius:999px;padding:3px 14px;font-weight:700}
+.readout .pill.on{background:#ffe1e1;color:#b31d1d}
+.readout .pill.off{background:#eef1f6;color:var(--muted)}
+
+/* svg styles */
+svg .w{fill:none;stroke:var(--wire-off);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+svg .w.on{stroke:var(--wire-on);filter:drop-shadow(0 0 3px rgba(255,122,61,.75))}
+svg .flow{fill:none;stroke:#ffe2c9;stroke-width:1.6;stroke-dasharray:4 12;animation:flow .9s linear infinite;stroke-linecap:round}
+@keyframes flow{to{stroke-dashoffset:-16}}
+svg .dot{fill:var(--wire-off)} svg .dot.on{fill:var(--wire-on)}
+svg .gate path,svg .gate circle.bub{fill:var(--gate);stroke:#8fa3c6;stroke-width:2}
+svg .gate.hi path,svg .gate.hi circle.bub{fill:var(--gate-hi);stroke:#ff9a66}
+svg .gname{font:700 10.5px "JetBrains Mono",monospace;fill:#2a3550;text-anchor:middle}
+svg .gid{font:700 11px "JetBrains Mono",monospace;fill:#8ea2c8;text-anchor:middle}
+svg .gval{font:700 12px "JetBrains Mono",monospace;fill:#8ea2c8}
+svg .gval.on{fill:var(--wire-on)}
+svg .bus-lbl{cursor:pointer}
+svg .bus-lbl circle{fill:#1f3150;stroke:#5d7299;stroke-width:2}
+svg .bus-lbl.on circle{fill:#5a2a17;stroke:var(--wire-on)}
+svg .bus-lbl text{font:800 14px "JetBrains Mono",monospace;fill:#fff;text-anchor:middle}
+svg .led-glow{fill:var(--led-on);opacity:0;transition:opacity .2s}
+svg .led.on .led-glow{opacity:.45}
+svg .led .bulb{fill:var(--led-off);stroke:#8a4b52;stroke-width:2;transition:fill .2s}
+svg .led.on .bulb{fill:var(--led-on);stroke:#ffb0b0}
+svg .ylbl{font:800 14px "JetBrains Mono",monospace;fill:#cfd9ec;text-anchor:middle}
+svg .pop{opacity:0;animation:pop .45s ease forwards}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* tables */
+table.tt{border-collapse:collapse;width:100%;max-width:380px;text-align:center;font-family:"JetBrains Mono",monospace;font-size:17px}
+table.tt th{background:#eef1f6;color:var(--muted);font-weight:700;padding:7px;border:1px solid var(--line)}
+table.tt td{padding:6px;border:1px solid var(--line)}
+table.tt tr.cur td{background:#fff3e9}
+table.tt td.y{font-weight:800}
+.cell{width:46px;height:36px;border-radius:9px;border:2px dashed #b8c2d6;background:#fff;font:800 17px "JetBrains Mono",monospace;cursor:pointer;color:var(--ink)}
+.cell.set{border-style:solid;border-color:var(--accent)}
+.cell.ok{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.cell.no{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.try{border:none;background:#eef1f6;border-radius:8px;padding:4px 10px;font:inherit;font-size:14px;cursor:pointer;color:var(--accent)}
+.try:hover{background:var(--accent-soft)}
+.btn{border:none;border-radius:11px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;background:var(--accent);color:#fff;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:#eef1f6;color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.feedback{margin-top:10px;font-weight:700;min-height:1.6em}
+.feedback.good{color:var(--good)} .feedback.bad{color:var(--bad)}
+
+/* stepper */
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
+.step{border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:8px}
+.step .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#eef1f6;font-size:13px}
+.step.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.step.active .n{background:var(--accent);color:#fff}
+.step.done .n{background:var(--good);color:#fff}
+.levelbar{height:6px;background:#e3e8f1;border-radius:99px;overflow:hidden;margin-bottom:14px}
+.levelbar span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7aa0ff);transition:width .4s}
+
+/* lab */
+.lab-in .cell{width:56px;height:40px}
+.pipeline{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.pipeline .p{background:#eef1f6;border-radius:10px;padding:6px 12px;font-size:14.5px;color:var(--muted);font-weight:600}
+.pipeline .p.done{background:var(--good-soft);color:var(--good)}
+.result-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+.result-head h3{margin:0}
+
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.gcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:8px}
+.gcard:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px rgba(30,60,140,.1)}
+.gcard .t{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.gcard .t b{font-size:16px}
+.gcard .board{padding:3px}
+.gcard .board svg{min-width:0}
+.gcard .meta{display:flex;justify-content:space-between;font-size:14px;color:var(--muted);align-items:center}
+.bits{font-family:"JetBrains Mono",monospace;direction:ltr;letter-spacing:2px;font-weight:700}
+footer{text-align:center;color:var(--muted);font-size:14px;padding:20px}
+footer a{color:var(--accent);font-weight:700}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>מעבדת NAND – בונים כל פונקציה לוגית משערים לוגיים מאותו הסוג - שער כזה נקרא פונקציה שלמה</h1>
+    <p>שער NAND נקרא "שער אוניברסלי": בעזרת שערי NAND בלבד אפשר לממש כל פונקציה לוגית. כאן תתנסו בזה בעצמכם, צעד אחר צעד.</p>
+  </div>
+</header>
+
+<nav class="tabs"><div class="wrap">
+  <a href="#intro" class="active">1. מבוא: שער NAND</a>
+  <a href="#demos">2. הדגמות מדורגות</a>
+  <a href="#lab">3. מעבדת תכנון</a>
+  <a href="#gallery">4. גלריית המעגלים</a>
+</div></nav>
+
+<main>
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <h2><span class="num">1</span>מבוא – מה עושה שער NAND?</h2>
+  <p class="lead">NAND הוא שער AND שאחריו NOT (שימו לב לעיגול הקטן ביציאה – הוא מסמן היפוך). הפעילו את המתגים A ו-B וצפו בנורה.</p>
+  <div class="grid2">
+    <div class="card"><div id="introRig"></div></div>
+    <div class="card">
+      <h3>טבלת האמת של NAND</h3>
+      <div class="mathline">Y = <span class="ov">A · B</span></div>
+      <table class="tt" id="introTT">
+        <thead><tr><th>A</th><th>B</th><th>A·B</th><th>Y</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="tip">💡 הנורה כבויה <b>רק</b> כאשר שני המתגים דולקים (A=1 ו-B=1). בכל מקרה אחר – היא דולקת.</div>
+      <p style="margin:12px 0 0">בהמשך נגלה שמהשער הפשוט הזה לבדו אפשר לבנות NOT,&nbsp;AND,&nbsp;OR,&nbsp;NOR ואפילו XOR.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DEMOS ============ -->
+<section id="demos">
+  <h2><span class="num">2</span>הדגמות מדורגות – משער NAND לשערים אחרים</h2>
+  <p class="lead">בכל שלב בונים שער חדש מ-NAND בלבד, ומשתמשים בשלבים הקודמים כאבני בניין. הפעילו את המתגים, ואז מלאו בעצמכם את טבלת האמת ובדקו.</p>
+  <div class="levelbar"><span id="levelFill"></span></div>
+  <div class="steps" id="stepBtns"></div>
+  <div id="demoBody"></div>
+</section>
+
+<!-- ============ LAB ============ -->
+<section id="lab">
+  <h2><span class="num">3</span>מעבדת תכנון – אתם מגדירים, המערכת משרטטת</h2>
+  <p class="lead">קבעו את ערך היציאה Y עבור כל צירוף של הכניסות A ו-B (לחצו על התא כדי להחליף בין 0 ל-1). לאחר מכן לחצו "שרטט מעגל" – המערכת תזהה את הפונקציה ותשרטט את המימוש שלה משערי NAND בלבד.</p>
+  <div class="grid2">
+    <div class="card lab-in">
+      <h3>טבלת האמת שלכם</h3>
+      <table class="tt" id="labTT">
+        <thead><tr><th>A</th><th>B</th><th>Y</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="labDraw">שרטט מעגל ⚡</button>
+        <button class="btn ghost" id="labRandom">אתגר אקראי</button>
+        <button class="btn ghost" id="labClear">נקה</button>
+      </div>
+      <div class="feedback" id="labMsg"></div>
+      <div class="pipeline" id="labPipe">
+        <span class="p">① קריאת הטבלה</span><span class="p">② זיהוי הפונקציה</span><span class="p">③ המרה ל-NAND</span><span class="p">④ שרטוט ובדיקה</span>
+      </div>
+    </div>
+    <div class="card" id="labInfo">
+      <h3>מה יוצג כאן?</h3>
+      <p style="margin:0;color:var(--muted)">לאחר השרטוט יופיעו כאן: שם הפונקציה, הביטוי הבוליאני, הדרך להמיר אותו לשערי NAND ומספר השערים שנדרשו.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px;display:none" id="labResult"></div>
+</section>
+
+<!-- ============ GALLERY ============ -->
+<section id="gallery">
+  <h2><span class="num">4</span>גלריית המעגלים – 16 פונקציות, שער אחד בלבד</h2>
+  <p class="lead">לכל אחת מ-16 הפונקציות האפשריות של שתי כניסות יש מימוש משערי NAND בלבד. המתגים שכאן מפעילים את כל המעגלים בבת אחת. לחיצה על כרטיס פותחת אותו במעבדה.</p>
+  <div class="card" style="margin-bottom:14px"><div class="row"><b>כניסות משותפות:</b><div class="switches" id="galSwitches"></div></div></div>
+  <div class="gallery" id="galGrid"></div>
+</section>
+
+</main>
+<footer>מעבדת NAND · לימוד מערכות ספרתיות · שערים אוניברסליים · <a href="NOR-LAB.HTML">למעבדת NOR ←</a></footer>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const ov = s => `<span class="ov">${s}</span>`;
+const M = s => `<span class="math">${s}</span>`;
+const G = (id, a, b, col, y) => ({ id, in: [a, b], col, y });
+
+/* ---------- circuit library (NAND only) ----------
+   key = outputs for (A,B) = 00,01,10,11                */
+const C = {};
+C.NAND = [G('N1','A','B',0,80)];
+C.NOTA = [G('N1','A','A',0,80)];
+C.NOTB = [G('N1','B','B',0,80)];
+C.AND  = [G('N1','A','B',0,80), G('N2','N1','N1',1,80)];
+C.OR   = [G('N1','A','A',0,60), G('N2','B','B',0,150), G('N3','N1','N2',1,105)];
+C.NOR  = [...C.OR, G('N4','N3','N3',2,105)];
+C.BUFA = [G('N1','A','A',0,80), G('N2','N1','N1',1,80)];
+C.BUFB = [G('N1','B','B',0,80), G('N2','N1','N1',1,80)];
+C.AoNB = [G('N1','A','A',0,60), G('N2','N1','B',1,130)];        // A+B'
+C.NAoB = [G('N1','B','B',0,60), G('N2','N1','A',1,130)];        // A'+B
+C.ANB  = [...C.NAoB, G('N3','N2','N2',2,130)];                  // A·B'
+C.NAB  = [...C.AoNB, G('N3','N2','N2',2,130)];                  // A'·B
+C.XOR  = [G('N1','A','B',0,130), G('N2','A','N1',1,60), G('N3','N1','B',1,200), G('N4','N2','N3',2,130)];
+C.XNOR = [...C.XOR, G('N5','N4','N4',3,130)];
+C.ONE  = [G('N1','A','A',0,60), G('N2','N1','A',1,130)];
+C.ZERO = [...C.ONE, G('N3','N2','N2',2,130)];
+
+const LIB = {
+  '0000': {name:'קבוע 0', en:'FALSE', g:C.ZERO, expr:'Y = 0',
+    nand:`Y = ${ov(ov(ov('A')+' · A'))} = NOT(1) = 0`,
+    note:'היציאה תמיד 0: בונים את הקבוע 1 ומהפכים אותו.'},
+  '0001': {name:'AND', en:'AND', g:C.AND, expr:'Y = A · B',
+    nand:`A · B = ${ov(ov('A · B'))} = NAND( NAND(A,B) , NAND(A,B) )`,
+    note:'NAND ואחריו מהפך (NAND עם כניסות מחוברות) – ההיפוך הכפול מחזיר AND.'},
+  '0010': {name:'A וגם לא B', en:'A·B̅ (Inhibit)', g:C.ANB, expr:`Y = A · ${ov('B')}`,
+    nand:`A · ${ov('B')} = ${ov(ov('A')+' + B')} = NOT( NAND( A , NAND(B,B) ) )`,
+    note:'זהו ההיפוך של הפונקציה A̅+B, ולכן מוסיפים לה מהפך.'},
+  '0011': {name:'העברת A', en:'BUFFER A', g:C.BUFA, expr:'Y = A',
+    nand:`A = ${ov(ov('A'))} = NAND( NAND(A,A) , NAND(A,A) )`,
+    note:'שני היפוכים מבטלים זה את זה – היציאה שווה ל-A (B לא משפיע).'},
+  '0100': {name:'לא A וגם B', en:'A̅·B (Inhibit)', g:C.NAB, expr:`Y = ${ov('A')} · B`,
+    nand:`${ov('A')} · B = ${ov('A + '+ov('B'))} = NOT( NAND( NAND(A,A) , B ) )`,
+    note:'זהו ההיפוך של הפונקציה A+B̅, ולכן מוסיפים לה מהפך.'},
+  '0101': {name:'העברת B', en:'BUFFER B', g:C.BUFB, expr:'Y = B',
+    nand:`B = ${ov(ov('B'))} = NAND( NAND(B,B) , NAND(B,B) )`,
+    note:'שני היפוכים מבטלים זה את זה – היציאה שווה ל-B (A לא משפיע).'},
+  '0110': {name:'XOR', en:'XOR', g:C.XOR, expr:`Y = A ⊕ B`,
+    nand:`N1 = NAND(A,B) ;  Y = NAND( NAND(A,N1) , NAND(N1,B) )`,
+    note:'Y=1 כאשר הכניסות שונות. מימוש חסכוני וקלאסי בארבעה שערי NAND.'},
+  '0111': {name:'OR', en:'OR', g:C.OR, expr:'Y = A + B',
+    nand:`A + B = ${ov(ov('A')+' · '+ov('B'))} = NAND( NAND(A,A) , NAND(B,B) )`,
+    note:'לפי כלל דה-מורגן: הופכים כל כניסה בנפרד ומזינים לשער NAND נוסף.'},
+  '1000': {name:'NOR', en:'NOR', g:C.NOR, expr:`Y = ${ov('A + B')}`,
+    nand:`${ov('A + B')} = NOT( OR ) = NAND( N3 , N3 ),  N3 = NAND( NAND(A,A) , NAND(B,B) )`,
+    note:'בונים OR משלושה שערים ומוסיפים מהפך רביעי.'},
+  '1001': {name:'XNOR', en:'XNOR', g:C.XNOR, expr:`Y = ${ov('A ⊕ B')}`,
+    nand:`XOR = NAND( NAND(A,N1) , NAND(N1,B) ),  N1 = NAND(A,B) ;  XNOR = NAND(XOR, XOR)`,
+    note:'Y=1 כאשר הכניסות שוות. בונים XOR מארבעה שערים ומהפכים עם שער חמישי.'},
+  '1010': {name:'NOT B', en:'NOT B', g:C.NOTB, expr:`Y = ${ov('B')}`,
+    nand:`${ov('B')} = ${ov('B · B')} = NAND(B,B)`,
+    note:'מחברים את שתי כניסות השער ל-B, והשער הופך למהפך.'},
+  '1011': {name:'A או לא B', en:'A+B̅', g:C.AoNB, expr:`Y = A + ${ov('B')}`,
+    nand:`A + ${ov('B')} = ${ov(ov('A')+' · B')} = NAND( NAND(A,A) , B )`,
+    note:'Y=0 רק כאשר A=0 ו-B=1. הופכים את A ומזינים אותו יחד עם B לשער NAND.'},
+  '1100': {name:'NOT A', en:'NOT A', g:C.NOTA, expr:`Y = ${ov('A')}`,
+    nand:`${ov('A')} = ${ov('A · A')} = NAND(A,A)`,
+    note:'מחברים את שתי כניסות השער ל-A, והשער הופך למהפך.'},
+  '1101': {name:'לא A או B', en:'A̅+B', g:C.NAoB, expr:`Y = ${ov('A')} + B`,
+    nand:`${ov('A')} + B = ${ov('A · '+ov('B'))} = NAND( A , NAND(B,B) )`,
+    note:'Y=0 רק כאשר A=1 ו-B=0. הופכים את B ומזינים אותו יחד עם A לשער NAND.'},
+  '1110': {name:'NAND', en:'NAND', g:C.NAND, expr:`Y = ${ov('A · B')}`,
+    nand:`Y = NAND(A,B)`,
+    note:'זה בדיוק שער NAND יחיד – הפונקציה הבסיסית שלנו.'},
+  '1111': {name:'קבוע 1', en:'TRUE', g:C.ONE, expr:'Y = 1',
+    nand:`${ov('A')} = NAND(A,A) ;  Y = NAND(${ov('A')}, A) = ${ov(ov('A')+' · A')} = ${ov('0')} = 1`,
+    note:'היציאה תמיד 1. מחברים את A ואת ההיפוך שלו לשער NAND: אחד מהם תמיד 0, ולכן היציאה תמיד 1.'}
+};
+
+/* ---------- logic ---------- */
+function usedInputs(gates){
+  const s = new Set();
+  gates.forEach(g => g.in.forEach(x => { if (x === 'A' || x === 'B') s.add(x); }));
+  return ['A','B'].filter(x => s.has(x));
+}
+function evaluate(gates, v){
+  const sig = { A: v.A, B: v.B };
+  gates.forEach(g => { sig[g.id] = (sig[g.in[0]] && sig[g.in[1]]) ? 0 : 1; });
+  return sig;
+}
+const outOf = (gates, v) => evaluate(gates, v)[gates[gates.length - 1].id];
+
+/* ---------- SVG renderer ---------- */
+function circuitSVG(gates, v, opts = {}){
+  const sig = evaluate(gates, v);
+  const COL0 = 150, DX = 150, BUS = { A: 55, B: 90 };
+  const used = usedInputs(gates);
+  const pos = {};
+  gates.forEach(g => pos[g.id] = { x: COL0 + g.col * DX, y: g.y });
+  const last = gates[gates.length - 1], lp = pos[last.id];
+  const maxY = Math.max(...gates.map(g => g.y));
+  const ledX = lp.x + 70 + 62, W = ledX + 40, H = maxY + 70;
+  const on = s => sig[s] ? ' on' : '';
+  const wires = [], dots = [], fan = {};
+
+  gates.forEach(g => {
+    const p = pos[g.id], mx = p.x - 30, px = p.x, y0 = p.y - 12, y1 = p.y + 12;
+    if (g.in[0] === g.in[1]) {                       // tied inputs -> inverter
+      const s = g.in[0]; let d;
+      if (s in BUS) { d = `M${BUS[s]},${p.y} H${mx}`; dots.push([BUS[s], p.y, s]); }
+      else { const sp = pos[s]; d = `M${sp.x + 70},${sp.y} H${mx} V${p.y}`; }
+      d += ` M${mx},${y0} V${y1} M${mx},${y0} H${px} M${mx},${y1} H${px}`;
+      dots.push([mx, p.y, s]);
+      wires.push([d, s]);
+    } else {
+      g.in.forEach((s, i) => {
+        const py = i ? y1 : y0; let d;
+        if (s in BUS) { d = `M${BUS[s]},${py} H${px}`; dots.push([BUS[s], py, s]); }
+        else {
+          const sp = pos[s], sx = sp.x + 70;
+          d = sp.y === py ? `M${sx},${py} H${px}` : `M${sx},${sp.y} H${mx} V${py} H${px}`;
+          const k = s + '|' + mx; fan[k] = (fan[k] || 0) + 1;
+          if (fan[k] === 2) dots.push([mx, sp.y, s]);
+        }
+        wires.push([d, s]);
+      });
+    }
+  });
+  wires.push([`M${lp.x + 70},${lp.y} H${ledX - 15}`, last.id]);
+
+  let out = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="מעגל משערי NAND">`;
+  used.forEach(n => {
+    const x = BUS[n];
+    out += `<path class="w${on(n)}" d="M${x},32 V${H - 12}"/>`;
+    if (sig[n]) out += `<path class="flow" d="M${x},32 V${H - 12}"/>`;
+  });
+  wires.forEach(([d, s]) => {
+    out += `<path class="w${on(s)}" d="${d}"/>`;
+    if (sig[s]) out += `<path class="flow" d="${d}"/>`;
+  });
+  dots.forEach(([x, y, s]) => out += `<circle class="dot${on(s)}" cx="${x}" cy="${y}" r="4.5"/>`);
+  used.forEach(n => {
+    out += `<g class="bus-lbl${on(n)}" data-in="${n}"><circle cx="${BUS[n]}" cy="18" r="14"/><text x="${BUS[n]}" y="23">${n}</text></g>`;
+  });
+  gates.forEach((g, i) => {
+    const { x, y } = pos[g.id];
+    const anim = opts.animate ? ` pop" style="animation-delay:${(i * 0.35).toFixed(2)}s` : '';
+    out += `<g class="gate${sig[g.id] ? ' hi' : ''}${anim}">
+      <path d="M${x},${y - 25} H${x + 35} A25,25 0 0 1 ${x + 35},${y + 25} H${x} Z"/>
+      <circle class="bub" cx="${x + 65}" cy="${y}" r="5"/>
+      <text class="gname" x="${x + 28}" y="${y + 4}">NAND</text>
+      <text class="gid" x="${x + 30}" y="${y - 31}">${g.id}</text>
+      <text class="gval${on(g.id)}" x="${x + 74}" y="${y - 7}">${sig[g.id]}</text>
+    </g>`;
+  });
+  const lo = sig[last.id];
+  out += `<g class="led${lo ? ' on' : ''}"><circle class="led-glow" cx="${ledX}" cy="${lp.y}" r="27"/>
+    <circle class="bulb" cx="${ledX}" cy="${lp.y}" r="15"/>
+    <text class="ylbl" x="${ledX}" y="${lp.y + 38}">Y=${lo}</text></g>`;
+  return out + '</svg>';
+}
+
+/* ---------- switch widget ---------- */
+function makeSwitch(name, onToggle){
+  const b = document.createElement('button');
+  b.className = 'sw'; b.type = 'button';
+  b.innerHTML = `<span class="lbl">${name}</span><span class="track"><span class="knob"></span></span><span class="val">0</span>`;
+  b.onclick = onToggle;
+  b.setVal = v => { b.classList.toggle('on', !!v); b.querySelector('.val').textContent = v; b.setAttribute('aria-pressed', !!v); };
+  return b;
+}
+
+/* ---------- interactive rig: switches + board + LED (+ optional quiz) ---------- */
+function mountCircuit(host, gates, opts = {}){
+  const st = { A: 0, B: 0 };
+  const used = usedInputs(gates);
+  let first = true;
+  host.innerHTML = `<div class="rig"><div class="switches"></div><div class="board"></div><div class="readout"></div></div>`;
+  const swBox = $('.switches', host), board = $('.board', host), readout = $('.readout', host);
+  const sws = {};
+  used.forEach(n => { sws[n] = makeSwitch(n, () => { st[n] ^= 1; draw(); }); swBox.appendChild(sws[n]); });
+  let quiz = null;
+  if (opts.quizHost) quiz = buildQuiz(opts.quizHost, gates, used, (a, b) => { st.A = a; st.B = b; draw(); });
+
+  function draw(){
+    board.innerHTML = circuitSVG(gates, st, { animate: first && opts.animate });
+    first = false;
+    board.querySelectorAll('[data-in]').forEach(e => e.onclick = () => { st[e.dataset.in] ^= 1; draw(); });
+    used.forEach(n => sws[n].setVal(st[n]));
+    const y = outOf(gates, st);
+    readout.innerHTML = `<span>נורת היציאה:</span><span class="pill ${y ? 'on' : 'off'}">${y ? 'דולקת · Y=1' : 'כבויה · Y=0'}</span><span class="badge gray">${gates.length} שערי NAND</span>`;
+    if (quiz) quiz.mark(st);
+    if (opts.onChange) opts.onChange(st, y);
+  }
+  draw();
+  return { set(a, b){ st.A = a; st.B = b; draw(); } };
+}
+
+/* ---------- student truth-table quiz ---------- */
+function buildQuiz(host, gates, used, setInputs){
+  const rows = used.length === 1 ? [[0],[1]] : [[0,0],[0,1],[1,0],[1,1]];
+  host.innerHTML = `
+    <h3>בדקו את עצמכם</h3>
+    <p style="margin:0 0 10px;color:var(--muted);font-size:15.5px">לחצו "נסו" כדי להעביר את המתגים לשורה, צפו בנורה, ומלאו את Y (לחיצה על התא מחליפה ? ← 0 ← 1).</p>
+    <table class="tt"><thead><tr>${used.map(n => `<th>${n}</th>`).join('')}<th>Y</th><th></th></tr></thead><tbody>
+    ${rows.map((r, i) => `<tr data-r="${i}">${r.map(x => `<td>${x}</td>`).join('')}
+      <td><button class="cell" data-i="${i}" type="button">?</button></td>
+      <td><button class="try" data-i="${i}" type="button">נסו ◀</button></td></tr>`).join('')}
+    </tbody></table>
+    <div class="row" style="margin-top:12px"><button class="btn" type="button" data-act="check">בדיקה ✓</button><button class="btn ghost" type="button" data-act="show">הצג פתרון</button></div>
+    <div class="feedback"></div>`;
+  const ans = rows.map(() => null);
+  const toVals = r => used.length === 1 ? { [used[0]]: r[0], A: used[0] === 'A' ? r[0] : 0, B: used[0] === 'B' ? r[0] : 0 } : { A: r[0], B: r[1] };
+  const fb = $('.feedback', host);
+  host.querySelectorAll('.cell').forEach(c => c.onclick = () => {
+    const i = +c.dataset.i;
+    ans[i] = ans[i] === null ? 0 : ans[i] === 0 ? 1 : null;
+    c.textContent = ans[i] === null ? '?' : ans[i];
+    c.className = 'cell' + (ans[i] === null ? '' : ' set');
+    fb.textContent = '';
+  });
+  host.querySelectorAll('.try').forEach(t => t.onclick = () => { const v = toVals(rows[+t.dataset.i]); setInputs(v.A, v.B); });
+  $('[data-act=check]', host).onclick = () => {
+    if (ans.some(a => a === null)) { fb.className = 'feedback bad'; fb.textContent = 'יש למלא את כל התאים לפני הבדיקה.'; return; }
+    let good = 0;
+    rows.forEach((r, i) => {
+      const ok = ans[i] === outOf(gates, toVals(r));
+      if (ok) good++;
+      host.querySelector(`.cell[data-i="${i}"]`).className = 'cell ' + (ok ? 'ok' : 'no');
+    });
+    const all = good === rows.length;
+    fb.className = 'feedback ' + (all ? 'good' : 'bad');
+    fb.textContent = all ? 'מצוין! כל השורות נכונות 🎉' : `${good} מתוך ${rows.length} נכונות. בדקו שוב את השורות האדומות בעזרת המתגים.`;
+    if (all && host.onSolved) host.onSolved();
+  };
+  $('[data-act=show]', host).onclick = () => {
+    rows.forEach((r, i) => { ans[i] = outOf(gates, toVals(r)); const c = host.querySelector(`.cell[data-i="${i}"]`); c.textContent = ans[i]; c.className = 'cell set'; });
+    fb.className = 'feedback'; fb.textContent = 'זהו הפתרון. נסו להסביר לעצמכם כל שורה בעזרת המעגל.';
+  };
+  return {
+    mark(st){
+      rows.forEach((r, i) => {
+        const v = toVals(r);
+        host.querySelector(`tr[data-r="${i}"]`).classList.toggle('cur', used.every(n => v[n] === st[n]));
+      });
+    }
+  };
+}
+
+/* ================= INTRO ================= */
+(function intro(){
+  const tb = $('#introTT tbody');
+  tb.innerHTML = [[0,0],[0,1],[1,0],[1,1]].map(([a,b]) =>
+    `<tr data-k="${a}${b}"><td>${a}</td><td>${b}</td><td>${a&b}</td><td class="y">${(a&b)?0:1}</td></tr>`).join('');
+  mountCircuit($('#introRig'), C.NAND, {
+    animate: true,
+    onChange: st => tb.querySelectorAll('tr').forEach(tr => tr.classList.toggle('cur', tr.dataset.k === `${st.A}${st.B}`))
+  });
+})();
+
+/* ================= DEMOS ================= */
+const STEPS = [
+  { key:'NOT', title:'שער NOT', level:'שלב 1 · קל', gates:C.NOTA,
+    text:`<p>הרעיון הראשון והחשוב ביותר: <b>מחברים את שתי הכניסות של שער NAND יחד</b> לאותו אות A.</p>
+          <p>מכיוון ש-A·A=A, השער מבצע AND של A עם עצמו ואחר כך היפוך – כלומר מתקבל פשוט ההיפוך של A.</p>`,
+    math:`Y = NAND(A,A) = ${ov('A · A')} = ${ov('A')}`,
+    tip:'את "המהפך מ-NAND" הזה נשתמש בכל השלבים הבאים כאבן בניין.' },
+  { key:'AND', title:'שער AND', level:'שלב 2 · קל', gates:C.AND,
+    text:`<p>NAND הוא בעצם AND עם היפוך ביציאה. כדי לקבל AND נבטל את ההיפוך – נוסיף אחרי שער ה-NAND <b>מהפך מ-NAND</b> (מהשלב הקודם).</p>
+          <p>שני היפוכים מבטלים זה את זה: ${M(ov(ov('X')) + ' = X')}.</p>`,
+    math:`Y = NAND( N1 , N1 ) = ${ov(ov('A · B'))} = A · B`,
+    tip:'שימו לב: N1 מוציא NAND של הכניסות, ו-N2 מהפך אותו בחזרה.' },
+  { key:'OR', title:'שער OR', level:'שלב 3 · בינוני', gates:C.OR,
+    text:`<p>כאן נעזרים ב<b>כלל דה-מורגן</b>: ${M('A + B = ' + ov(ov('A') + ' · ' + ov('B')))}.</p>
+          <p>כלומר: הופכים כל כניסה בנפרד (N1 הופך את A, N2 הופך את B), ואת שני ההיפוכים מכניסים לשער NAND שלישי (N3).</p>`,
+    math:`Y = NAND( ${ov('A')} , ${ov('B')} ) = ${ov(ov('A') + ' · ' + ov('B'))} = A + B`,
+    tip:'הנורה תהיה כבויה רק כאשר שני המתגים כבויים – בדיוק כמו OR.' },
+  { key:'NOR', title:'שער NOR', level:'שלב 4 · בינוני', gates:C.NOR,
+    text:`<p>NOR הוא OR שאחריו NOT. לכן לוקחים את מעגל ה-OR מהשלב הקודם (שלושה שערים) ומוסיפים <b>מהפך מ-NAND</b> רביעי ביציאה.</p>`,
+    math:`Y = NAND( N3 , N3 ) = ${ov('A + B')}`,
+    tip:'מעניין: גם NOR הוא שער אוניברסלי. כאן בנינו שער אוניברסלי אחד מתוך שער אוניברסלי אחר!' },
+  { key:'XOR', title:'אתגר: XOR', level:'שלב 5 · אתגר', gates:C.XOR,
+    text:`<p>XOR מוציא 1 רק כאשר הכניסות <b>שונות</b>. עם NAND אפשר לבנות אותו בארבעה שערים בלבד: N1 = NAND(A,B), N2 ו-N3 משלבים את N1 עם כל כניסה, ו-N4 מאחד ביניהם.</p>
+          <p>N1 = NAND(A,B) משמש פעמיים – זהו "פיצול" של אות לשני שערים (fan-out).</p>`,
+    math:`Y = NAND( NAND(A,N1) , NAND(N1,B) ) = A ⊕ B`,
+    tip:'נסו לעקוב אחרי הערך של כל שער (המספר הקטן ליד היציאה שלו) כדי להבין את הזרימה.' }
+];
+let curStep = 0;
+const solved = new Set();
+function renderSteps(){
+  $('#stepBtns').innerHTML = STEPS.map((s, i) =>
+    `<button class="step${i === curStep ? ' active' : ''}${solved.has(i) ? ' done' : ''}" data-i="${i}" type="button"><span class="n">${solved.has(i) ? '✓' : i + 1}</span>${s.key}</button>`).join('');
+  $('#stepBtns').querySelectorAll('.step').forEach(b => b.onclick = () => { curStep = +b.dataset.i; renderDemo(); });
+  $('#levelFill').style.width = ((curStep + 1) / STEPS.length * 100) + '%';
+}
+function renderDemo(){
+  const s = STEPS[curStep];
+  renderSteps();
+  $('#demoBody').innerHTML = `
+    <div class="grid2">
+      <div class="card">
+        <div class="result-head"><h3>${s.title} – מ-NAND בלבד</h3><span class="badge">${s.level}</span></div>
+        ${s.text}
+        <div class="mathline">${s.math}</div>
+        <div id="demoRig"></div>
+        <div class="tip">💡 ${s.tip}</div>
+      </div>
+      <div class="card" id="demoQuiz"></div>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+      <button class="btn ghost" id="prevStep" type="button" ${curStep === 0 ? 'disabled' : ''}>→ לשלב הקודם</button>
+      <button class="btn" id="nextStep" type="button" ${curStep === STEPS.length - 1 ? 'disabled' : ''}>לשלב הבא ←</button>
+    </div>`;
+  const qh = $('#demoQuiz');
+  qh.onSolved = () => { solved.add(curStep); renderSteps(); };
+  mountCircuit($('#demoRig'), s.gates, { animate: true, quizHost: qh });
+  $('#prevStep').onclick = () => { curStep--; renderDemo(); };
+  $('#nextStep').onclick = () => { curStep++; renderDemo(); };
+}
+renderDemo();
+
+/* ================= LAB ================= */
+const labAns = [null, null, null, null];
+const COMBOS = [[0,0],[0,1],[1,0],[1,1]];
+function renderLabTable(){
+  $('#labTT tbody').innerHTML = COMBOS.map(([a,b], i) =>
+    `<tr><td>${a}</td><td>${b}</td><td><button class="cell${labAns[i] === null ? '' : ' set'}" data-i="${i}" type="button">${labAns[i] === null ? '?' : labAns[i]}</button></td></tr>`).join('');
+  $('#labTT').querySelectorAll('.cell').forEach(c => c.onclick = () => {
+    const i = +c.dataset.i; labAns[i] = labAns[i] === null ? 0 : 1 - labAns[i];   // ? -> 0 -> 1 -> 0 ...
+    renderLabTable(); $('#labMsg').textContent = ''; setPipe(0);
+  });
+}
+function setPipe(n){ $('#labPipe').querySelectorAll('.p').forEach((p, i) => p.classList.toggle('done', i < n)); }
+function labDraw(){
+  const msg = $('#labMsg');
+  if (labAns.some(a => a === null)) { msg.className = 'feedback bad'; msg.textContent = 'מלאו קודם ערך 0 או 1 בכל ארבע השורות.'; return; }
+  const key = labAns.join(''), f = LIB[key];
+  msg.className = 'feedback good'; msg.textContent = `זוהתה הפונקציה: ${f.name}`;
+  setPipe(0);
+  [1,2,3,4].forEach(n => setTimeout(() => setPipe(n), n * 280));
+  $('#labInfo').innerHTML = `
+    <div class="result-head"><h3>${f.name}</h3><span class="badge">${f.g.length} שערי NAND</span></div>
+    <p style="margin:6px 0 0">${f.note}</p>
+    <div style="margin-top:8px;font-weight:700">הביטוי הבוליאני:</div>
+    <div class="mathline">${f.expr}</div>
+    <div style="font-weight:700">המרה לשערי NAND בלבד:</div>
+    <div class="mathline" style="font-size:15px">${f.nand}</div>`;
+  const res = $('#labResult');
+  res.style.display = 'block';
+  res.innerHTML = `
+    <div class="result-head"><h3>המעגל ששורטט עבורכם – ${f.name}</h3><span class="bits">Y = ${key.split('').join(' ')}</span></div>
+    <p style="margin:4px 0 12px;color:var(--muted)">הפעילו את המתגים ובדקו שהנורה מתנהגת בדיוק לפי הטבלה שהגדרתם.</p>
+    <div class="grid2"><div id="labRig"></div><div id="labCheck"></div></div>`;
+  const chk = $('#labCheck');
+  const draw = st => {
+    chk.innerHTML = `<h3>אימות מול הטבלה שלכם</h3><table class="tt"><thead><tr><th>A</th><th>B</th><th>Y שלכם</th><th>Y של המעגל</th><th></th></tr></thead><tbody>
+      ${COMBOS.map(([a,b], i) => { const y = outOf(f.g, {A:a, B:b});
+        return `<tr class="${st.A === a && st.B === b ? 'cur' : ''}"><td>${a}</td><td>${b}</td><td class="y">${labAns[i]}</td><td class="y">${y}</td><td>${y === labAns[i] ? '✅' : '❌'}</td></tr>`; }).join('')}
+      </tbody></table>`;
+  };
+  mountCircuit($('#labRig'), f.g, { animate: true, onChange: draw });
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+$('#labDraw').onclick = labDraw;
+$('#labClear').onclick = () => { labAns.fill(null); renderLabTable(); setPipe(0); $('#labMsg').textContent = ''; $('#labResult').style.display = 'none'; };
+$('#labRandom').onclick = () => {
+  const keys = Object.keys(LIB), k = keys[Math.floor(Math.random() * keys.length)];
+  k.split('').forEach((b, i) => labAns[i] = +b);
+  renderLabTable(); labDraw();
+};
+renderLabTable();
+
+/* ================= GALLERY ================= */
+const gal = { A: 0, B: 0 };
+const galSw = {};
+['A','B'].forEach(n => { galSw[n] = makeSwitch(n, () => { gal[n] ^= 1; renderGallery(); }); $('#galSwitches').appendChild(galSw[n]); });
+function renderGallery(){
+  galSw.A.setVal(gal.A); galSw.B.setVal(gal.B);
+  const keys = Object.keys(LIB).sort((a, b) => LIB[a].g.length - LIB[b].g.length || a.localeCompare(b));
+  $('#galGrid').innerHTML = keys.map(k => {
+    const f = LIB[k];
+    return `<div class="gcard" data-k="${k}" tabindex="0" role="button" aria-label="פתח את ${f.name} במעבדה">
+      <div class="t"><b>${f.name}</b><span class="badge gray">${f.g.length} NAND</span></div>
+      <div class="mathline" style="margin:0;font-size:15px">${f.expr}</div>
+      <div class="board">${circuitSVG(f.g, gal)}</div>
+      <div class="meta"><span>טבלה (00,01,10,11):</span><span class="bits">${k}</span></div>
+    </div>`;
+  }).join('');
+  $('#galGrid').querySelectorAll('.gcard').forEach(c => {
+    const open = () => { c.dataset.k.split('').forEach((b, i) => labAns[i] = +b); renderLabTable(); labDraw(); $('#lab').scrollIntoView({ behavior: 'smooth' }); };
+    c.onclick = open;
+    c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
+  });
+}
+renderGallery();
+
+/* ---------- active tab on scroll ---------- */
+const links = [...document.querySelectorAll('nav.tabs a')];
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+}), { rootMargin: '-45% 0px -50% 0px' });
+document.querySelectorAll('main section').forEach(s => io.observe(s));
+</script>
+</body>
+</html>
+

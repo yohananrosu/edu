@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>רעידות אדמה בעולם</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #121a2b;
+    --panel-2: #18233a;
+    --text: #e6ecf5;
+    --muted: #8fa0bb;
+    --ocean: #0f2a4a;
+    --land: #2c4a3a;
+    --border: #5c7a6a;
+    --grid: rgba(255,255,255,0.08);
+    --m1: #f5d547;
+    --m2: #f59e2b;
+    --m3: #e5482f;
+    --m4: #b0179b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid #22304a;
+  }
+  header h1 { font-size: 20px; margin: 0; flex: 1 1 auto; }
+  header label { color: var(--muted); font-size: 14px; }
+  select, button {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid #2c3b58; border-radius: 6px;
+    padding: 6px 10px; font-size: 14px; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: #4a6290; }
+  #status { color: var(--muted); font-size: 13px; width: 100%; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #globeWrap { flex: 1; position: relative; min-width: 0; }
+  #globe { width: 100%; height: 100%; display: block; cursor: grab; }
+  #globe:active { cursor: grabbing; }
+  aside {
+    width: 400px; max-width: 100%;
+    background: var(--panel);
+    border-inline-start: 1px solid #22304a;
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .summary { padding: 12px 16px; border-bottom: 1px solid #22304a; font-size: 14px; }
+  .summary b { font-size: 18px; }
+  ul#quakes { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
+  ul#quakes li {
+    display: flex; gap: 10px; align-items: center;
+    padding: 10px 16px; border-bottom: 1px solid #1c2840; cursor: pointer;
+  }
+  ul#quakes li:hover, ul#quakes li.active { background: var(--panel-2); }
+  .mag {
+    flex: 0 0 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; color: #111;
+  }
+  .info { min-width: 0; flex: 1; }
+  .place { font-size: 14px; direction: ltr; text-align: right; overflow-wrap: anywhere; }
+  .region { font-size: 13px; color: #b9c7de; margin-top: 2px; }
+  .meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .meta a { color: #7fb2ff; }
+  .legend {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(18,26,43,0.85); border-radius: 8px;
+    padding: 8px 12px; font-size: 13px;
+  }
+  .legend div { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+  .legend span.dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .hint { position: absolute; top: 10px; right: 12px; font-size: 12px; color: var(--muted); }
+  #tooltip {
+    position: absolute; pointer-events: none; display: none;
+    background: rgba(10,15,28,0.95); border: 1px solid #2c3b58;
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; max-width: 280px;
+  }
+  .pulse { animation: pulse 1.6s ease-out infinite; transform-box: fill-box; transform-origin: center; }
+  @keyframes pulse { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(3); } }
+  @media (max-width: 800px) {
+    main { flex-direction: column; }
+    #globeWrap { height: 60vh; flex: none; }
+    aside { width: 100%; border-inline-start: none; border-top: 1px solid #22304a; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌍 רעידות אדמה בעולם — עוצמה מעל 3.5</h1>
+  <label>טווח זמן:
+    <select id="period">
+      <option value="day">24 שעות אחרונות</option>
+      <option value="week">7 ימים אחרונים</option>
+    </select>
+  </label>
+  <label>מיון:
+    <select id="sort">
+      <option value="time">לפי זמן</option>
+      <option value="mag">לפי עוצמה</option>
+    </select>
+  </label>
+  <button id="refresh">רענון ⟳</button>
+  <div id="status">טוען נתונים…</div>
+</header>
+<main>
+  <section id="globeWrap">
+    <svg id="globe"></svg>
+    <div class="hint">גרירה לסיבוב · גלגלת לזום · לחיצה על רשומה ברשימה מסובבת אליה</div>
+    <div class="legend">
+      <div><span class="dot" style="background:var(--m1)"></span>3.5 – 4.5</div>
+      <div><span class="dot" style="background:var(--m2)"></span>4.5 – 5.5</div>
+      <div><span class="dot" style="background:var(--m3)"></span>5.5 – 6.5</div>
+      <div><span class="dot" style="background:var(--m4)"></span>6.5 ומעלה</div>
+    </div>
+    <div id="tooltip"></div>
+  </section>
+  <aside>
+    <div class="summary" id="summary"></div>
+    <ul id="quakes"></ul>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script>
+const MIN_MAG = 3.5;
+const WORLD_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json";
+
+// ---------- Data sources ----------
+async function fetchUSGS(period) {
+  const url = `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_${period}.geojson`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("USGS " + res.status);
+  const data = await res.json();
+  return data.features
+    .filter(f => f.properties.mag != null && f.properties.mag > MIN_MAG)
+    .map(f => {
+      const place = f.properties.place || "";
+      const parts = place.split(", ");
+      return {
+        id: "usgs-" + f.id,
+        source: "USGS",
+        mag: f.properties.mag,
+        place,
+        region: parts.length > 1 ? parts[parts.length - 1] : place,
+        time: new Date(f.properties.time),
+        lon: f.geometry.coordinates[0],
+        lat: f.geometry.coordinates[1],
+        depth: f.geometry.coordinates[2],
+        url: f.properties.url
+      };
+    });
+}
+
+async function fetchEMSC(period) {
+  const hours = period === "day" ? 24 : 24 * 7;
+  const start = new Date(Date.now() - hours * 3600e3).toISOString().slice(0, 19);
+  const url = `https://www.seismicportal.eu/fdsnws/event/1/query?format=json&minmag=${MIN_MAG}&starttime=${start}&limit=1000`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("EMSC " + res.status);
+  const data = await res.json();
+  return data.features
+    .filter(f => f.properties.mag > MIN_MAG)
+    .map(f => {
+      const p = f.properties;
+      return {
+        id: "emsc-" + (p.unid || f.id),
+        source: "EMSC",
+        mag: p.mag,
+        place: p.flynn_region || "",
+        region: p.flynn_region || "",
+        time: new Date(p.time),
+        lon: p.lon, lat: p.lat, depth: p.depth,
+        url: `https://www.seismicportal.eu/eventdetails.html?unid=${p.unid}`
+      };
+    });
+}
+
+// An event reported by both services counts once (prefer USGS, keep EMSC region name)
+function merge(usgs, emsc) {
+  const out = [...usgs];
+  for (const e of emsc) {
+    const dup = out.find(u =>
+      u.source.includes("USGS") &&
+      Math.abs(u.time - e.time) < 90e3 &&
+      d3.geoDistance([u.lon, u.lat], [e.lon, e.lat]) * 6371 < 150
+    );
+    if (dup) {
+      dup.source = "USGS + EMSC";
+      dup.emscRegion = e.region;
+    } else {
+      out.push(e);
+    }
+  }
+  return out;
+}
+
+// Broad world area from coordinates (Hebrew)
+function worldArea(lat, lon) {
+  if (lat < -60) return "אנטארקטיקה";
+  if (lon >= -170 && lon < -30) {
+    if (lat > 13) return "צפון אמריקה";
+    if (lat > 7 && lon < -77) return "מרכז אמריקה";
+    return "דרום אמריקה / האוקיינוס השקט";
+  }
+  if (lon >= -30 && lon < 60) {
+    if (lat > 35 && lon < 45) return "אירופה / הים התיכון";
+    if (lat > 12 && lon >= 25) return "המזרח התיכון";
+    if (lat > 35) return "אירופה";
+    return "אפריקה / האטלנטי";
+  }
+  if (lon >= 60 && lon < 100) return lat > 5 ? "מרכז ודרום אסיה" : "האוקיינוס ההודי";
+  if (lon >= 100 && lon < 150) {
+    if (lat > 20) return "מזרח אסיה";
+    if (lat > -10) return "דרום-מזרח אסיה";
+    return "אוסטרליה";
+  }
+  if (lat > 40) return "צפון האוקיינוס השקט / רוסיה";
+  if (lat < -10) return "דרום-מערב האוקיינוס השקט";
+  return "האוקיינוס השקט";
+}
+
+const colorFor = m => m >= 6.5 ? "var(--m4)" : m >= 5.5 ? "var(--m3)" : m >= 4.5 ? "var(--m2)" : "var(--m1)";
+const radiusFor = m => 2 + Math.pow(m - 3, 1.6) * 1.6;
+
+// ---------- Globe ----------
+const svg = d3.select("#globe");
+const wrap = document.getElementById("globeWrap");
+const tooltip = document.getElementById("tooltip");
+const projection = d3.geoOrthographic().clipAngle(90).rotate([-35, -25]);
+const path = d3.geoPath(projection);
+const graticule = d3.geoGraticule10();
+
+const gSphere = svg.append("path").attr("fill", "var(--ocean)").attr("stroke", "#3a5a85");
+const gGrid = svg.append("path").attr("fill", "none").attr("stroke", "var(--grid)");
+const gLand = svg.append("path").attr("fill", "var(--land)");
+const gBorders = svg.append("path").attr("fill", "none").attr("stroke", "var(--border)").attr("stroke-width", 0.5);
+const gQuakes = svg.append("g");
+
+let land = null, borders = null, quakes = [], zoom = 1, autoRotate = true, selectedId = null;
+
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  svg.attr("viewBox", `0 0 ${w} ${h}`);
+  projection.translate([w / 2, h / 2]).scale(Math.min(w, h) / 2.15 * zoom);
+  render();
+}
+
+function isVisible(q) {
+  const r = projection.rotate();
+  return d3.geoDistance([q.lon, q.lat], [-r[0], -r[1]]) < Math.PI / 2;
+}
+
+function render() {
+  gSphere.attr("d", path({ type: "Sphere" }));
+  gGrid.attr("d", path(graticule));
+  if (land) { gLand.attr("d", path(land)); gBorders.attr("d", path(borders)); }
+
+  const visible = quakes.filter(isVisible);
+  const sel = gQuakes.selectAll("g.q").data(visible, d => d.id);
+  sel.exit().remove();
+  const enter = sel.enter().append("g").attr("class", "q");
+  enter.filter(d => d.mag >= 5.5).append("circle").attr("class", "pulse")
+    .attr("r", d => radiusFor(d.mag)).attr("fill", "none")
+    .attr("stroke", d => colorFor(d.mag)).attr("stroke-width", 1.5);
+  enter.append("circle").attr("class", "dot")
+    .attr("r", d => radiusFor(d.mag))
+    .attr("fill", d => colorFor(d.mag)).attr("fill-opacity", 0.85)
+    .attr("stroke", "#000").attr("stroke-width", 0.6)
+    .style("cursor", "pointer")
+    .on("mouseenter", (ev, d) => showTip(ev, d))
+    .on("mousemove", (ev, d) => showTip(ev, d))
+    .on("mouseleave", () => tooltip.style.display = "none")
+    .on("click", (ev, d) => select(d, true));
+
+  const all = enter.merge(sel);
+  all.attr("transform", d => { const [x, y] = projection([d.lon, d.lat]); return `translate(${x},${y})`; });
+  all.select("circle.dot")
+    .attr("stroke", d => d.id === selectedId ? "#fff" : "#000")
+    .attr("stroke-width", d => d.id === selectedId ? 2.5 : 0.6);
+  // bigger quakes drawn on top of small ones
+  all.sort((a, b) => a.mag - b.mag);
+}
+
+function showTip(ev, d) {
+  const box = wrap.getBoundingClientRect();
+  tooltip.innerHTML = `<b>M ${d.mag.toFixed(1)}</b> — ${escapeHtml(d.place)}<br>${worldArea(d.lat, d.lon)}<br>${fmtTime(d.time)} · עומק ${Math.round(d.depth)} ק"מ`;
+  tooltip.style.display = "block";
+  tooltip.style.left = (ev.clientX - box.left + 12) + "px";
+  tooltip.style.top = (ev.clientY - box.top + 12) + "px";
+}
+
+// drag to rotate
+svg.call(d3.drag()
+  .on("start", () => { autoRotate = false; })
+  .on("drag", ev => {
+    const r = projection.rotate();
+    const k = 75 / projection.scale();
+    projection.rotate([r[0] + ev.dx * k * 1.5, Math.max(-90, Math.min(90, r[1] - ev.dy * k * 1.5))]);
+    render();
+  }));
+
+// wheel to zoom
+svg.on("wheel", ev => {
+  ev.preventDefault();
+  zoom = Math.max(0.6, Math.min(6, zoom * (ev.deltaY < 0 ? 1.15 : 1 / 1.15)));
+  resize();
+}, { passive: false });
+
+d3.timer(() => {
+  if (!autoRotate) return;
+  const r = projection.rotate();
+  projection.rotate([r[0] + 0.12, r[1]]);
+  render();
+});
+
+function rotateTo(q) {
+  autoRotate = false;
+  const from = projection.rotate();
+  const to = [-q.lon, -q.lat];
+  const interp = d3.interpolate(from, to);
+  d3.transition().duration(1000).tween("rotate", () => t => { projection.rotate(interp(t)); render(); });
+}
+
+// ---------- List ----------
+function fmtTime(d) {
+  return d.toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function renderList() {
+  const sortBy = document.getElementById("sort").value;
+  const items = [...quakes].sort((a, b) => sortBy === "mag" ? b.mag - a.mag : b.time - a.time);
+  const ul = d3.select("#quakes");
+  ul.selectAll("li").remove();
+  const li = ul.selectAll("li").data(items, d => d.id).enter().append("li")
+    .attr("data-id", d => d.id)
+    .on("click", (ev, d) => { if (ev.target.tagName !== "A") select(d, false); });
+  li.append("div").attr("class", "mag")
+    .style("background", d => colorFor(d.mag)).text(d => d.mag.toFixed(1));
+  const info = li.append("div").attr("class", "info");
+  info.append("div").attr("class", "place").text(d => d.place || "—");
+  info.append("div").attr("class", "region")
+    .text(d => `אזור: ${worldArea(d.lat, d.lon)}` + (d.emscRegion ? ` · ${d.emscRegion}` : ""));
+  info.append("div").attr("class", "meta")
+    .html(d => `${fmtTime(d.time)} · עומק ${Math.round(d.depth)} ק"מ · מקור: ${d.source} · <a href="${d.url}" target="_blank" rel="noopener">פרטים</a>`);
+
+  const strongest = quakes.reduce((m, q) => (!m || q.mag > m.mag) ? q : m, null);
+  const byArea = d3.rollups(quakes, v => v.length, d => worldArea(d.lat, d.lon)).sort((a, b) => b[1] - a[1]);
+  document.getElementById("summary").innerHTML =
+    `<b>${quakes.length}</b> רעידות בעוצמה מעל ${MIN_MAG}` +
+    (strongest ? `<br>החזקה ביותר: <b style="color:${colorFor(strongest.mag)}">M ${strongest.mag.toFixed(1)}</b> — ${escapeHtml(strongest.place)}` : "") +
+    (byArea.length ? `<br><span style="color:var(--muted)">הכי פעיל: ${byArea.slice(0, 3).map(([a, n]) => `${a} (${n})`).join(" · ")}</span>` : "");
+}
+
+function select(q, scrollList) {
+  selectedId = q.id;
+  rotateTo(q);
+  document.querySelectorAll("#quakes li").forEach(li => li.classList.toggle("active", li.dataset.id === q.id));
+  if (scrollList) {
+    const li = document.querySelector(`#quakes li[data-id="${CSS.escape(q.id)}"]`);
+    if (li) li.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+// ---------- Load ----------
+async function load() {
+  const period = document.getElementById("period").value;
+  const status = document.getElementById("status");
+  status.textContent = "טוען נתונים מ-USGS ומ-EMSC…";
+  const [u, e] = await Promise.allSettled([fetchUSGS(period), fetchEMSC(period)]);
+  const usgs = u.status === "fulfilled" ? u.value : [];
+  const emsc = e.status === "fulfilled" ? e.value : [];
+  quakes = merge(usgs, emsc);
+  gQuakes.selectAll("*").remove();
+  selectedId = null;
+  render();
+  renderList();
+  const ok = [u.status === "fulfilled" ? `USGS ✓ (${usgs.length})` : "USGS ✗", e.status === "fulfilled" ? `EMSC ✓ (${emsc.length})` : "EMSC ✗"];
+  status.textContent = `עודכן ב-${new Date().toLocaleTimeString("he-IL")} · מקורות: ${ok.join(" · ")}`;
+  if (u.status === "rejected" && e.status === "rejected") status.textContent = "שגיאה בטעינת הנתונים — בדוק חיבור לאינטרנט ונסה שוב.";
+}
+
+document.getElementById("period").addEventListener("change", load);
+document.getElementById("sort").addEventListener("change", renderList);
+document.getElementById("refresh").addEventListener("click", load);
+window.addEventListener("resize", resize);
+
+d3.json(WORLD_URL).then(world => {
+  land = topojson.feature(world, world.objects.land);
+  borders = topojson.mesh(world, world.objects.countries, (a, b) => a !== b);
+  render();
+});
+
+resize();
+load();
+setInterval(load, 5 * 60 * 1000); // auto-refresh every 5 minutes
+</script>
+</body>
+</html>

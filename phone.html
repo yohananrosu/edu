@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>חיישן המצפן</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117; --panel: #151b24; --line: #263041; --ink: #e8edf4; --muted: #8a96a8;
+    --north: #e5383b; --brass: #c9a227; --ok: #2fbf71; --warn: #e0a526; --bad: #ff6b6b;
+    --font: "Heebo", Arial, sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left));
+    display: flex; flex-direction: column; gap: 14px; max-width: 520px; margin: auto;
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: 800; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  label { display: block; color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+  input {
+    width: 100%; font-family: var(--mono); font-size: 28px; letter-spacing: 6px; text-align: center; direction: ltr;
+    background: #0f151f; color: var(--brass); border: 1px solid var(--line); border-radius: 10px; padding: 8px;
+  }
+  button {
+    width: 100%; font: inherit; font-size: 20px; font-weight: 800; padding: 14px; border-radius: 12px; border: none;
+    background: var(--brass); color: #1a1405; cursor: pointer;
+  }
+  button.stop { background: #2a3342; color: var(--ink); }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .status { font-size: 15px; line-height: 1.7; }
+  .status .ok { color: var(--ok); } .status .warn { color: var(--warn); } .status .bad { color: var(--bad); }
+  .live { display: flex; align-items: center; gap: 16px; }
+  #rose { width: 140px; height: 140px; flex: none; }
+  .nums .h { font-family: var(--mono); font-size: 48px; font-weight: 700; direction: ltr; text-align: right; }
+  .nums .d { font-size: 22px; font-weight: 800; }
+  .nums .t { font-size: 14px; color: var(--muted); font-family: var(--mono); direction: ltr; text-align: right; }
+  .tip { font-size: 14px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+  <h1>חיישן המצפן — טלפון</h1>
+
+  <div class="card">
+    <label for="code">קוד חיבור (מופיע במסך התצוגה)</label>
+    <input id="code" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="000000">
+  </div>
+
+  <button id="start" type="button">התחל לשדר</button>
+
+  <div class="card status" id="status">לחץ על "התחל לשדר" ואשר גישה לחיישני התנועה.</div>
+
+  <div class="card live">
+    <svg id="rose" viewBox="-70 -70 140 140" aria-label="מצפן בטלפון">
+      <circle r="66" fill="#0f151f" stroke="#c9a227" stroke-width="3"/>
+      <g id="roseDial">
+        <text x="0" y="-44" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="16" fill="#e5383b">צ</text>
+        <text x="48" y="6" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">מז</text>
+        <text x="0" y="56" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">ד</text>
+        <text x="-48" y="6" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">מע</text>
+        <polygon points="0,-36 -7,0 7,0" fill="#e5383b"/>
+        <polygon points="0,36 -7,0 7,0" fill="#2f6fde"/>
+      </g>
+      <polygon points="0,-68 -6,-58 6,-58" fill="#e8edf4"/>
+    </svg>
+    <div class="nums">
+      <div class="h"><span id="hdg">---</span>°</div>
+      <div class="d" id="dir">—</div>
+      <div class="t" id="tilt">β -- · γ --</div>
+    </div>
+  </div>
+
+  <p class="tip">החזק את הטלפון שטוח ומקביל לרצפה לקבלת כיוון מדויק, והרחק אותו ממגנטים ומחפצי מתכת גדולים. אם הכיוון נראה שגוי, צייר באוויר כמה פעמים את הספרה 8 עם הטלפון כדי לכייל את המצפן.</p>
+
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+const BROKER = "wss://broker.hivemq.com:8884/mqtt";
+const PREFIX = "edu-compass-v1/";
+const SEND_EVERY_MS = 50;
+const DIRS = ["צפון", "צפון-מזרח", "מזרח", "דרום-מזרח", "דרום", "דרום-מערב", "מערב", "צפון-מערב"];
+const $ = id => document.getElementById(id);
+
+const params = new URLSearchParams(location.search);
+let saved = "";
+try { saved = localStorage.getItem("compass-phone-code") || ""; } catch (e) {}
+$("code").value = (params.get("code") || saved).replace(/\D/g, "").slice(0, 6);
+
+let running = false, client = null, topic = null, lastSend = 0, sent = 0, lastEvent = 0, wakeLock = null;
+let reading = null;
+let eventName = null;
+
+function setStatus(lines) {
+  $("status").innerHTML = "";
+  for (const [cls, text] of lines) {
+    const div = document.createElement("div");
+    if (cls) div.className = cls;
+    div.textContent = text;
+    $("status").appendChild(div);
+  }
+}
+
+function onOrientation(e) {
+  let h = null, abs = false;
+  if (typeof e.webkitCompassHeading === "number" && !isNaN(e.webkitCompassHeading)) {
+    h = e.webkitCompassHeading; abs = true;          // iPhone: degrees from magnetic north
+  } else if (e.alpha != null) {
+    h = (360 - e.alpha) % 360;                         // Android: alpha counts counter-clockwise
+    abs = e.absolute === true || e.type === "deviceorientationabsolute";
+  }
+  if (h == null) return;
+  lastEvent = Date.now();
+  reading = { h, b: e.beta || 0, g: e.gamma || 0, abs, acc: typeof e.webkitCompassAccuracy === "number" ? e.webkitCompassAccuracy : null };
+
+  const now = Date.now();
+  if (client && client.connected && now - lastSend >= SEND_EVERY_MS) {
+    lastSend = now; sent++;
+    client.publish(topic, JSON.stringify({
+      h: Math.round(reading.h * 10) / 10, b: Math.round(reading.b * 10) / 10, g: Math.round(reading.g * 10) / 10,
+      abs: reading.abs, acc: reading.acc, t: now
+    }));
+  }
+}
+
+function draw() {
+  if (reading) {
+    $("roseDial").setAttribute("transform", `rotate(${-reading.h})`);
+    $("hdg").textContent = Math.round(reading.h).toString().padStart(3, "0");
+    $("dir").textContent = DIRS[Math.round(reading.h / 45) % 8];
+    $("tilt").textContent = `β ${Math.round(reading.b)}° · γ ${Math.round(reading.g)}°`;
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// status line every second
+let lastSent = 0;
+setInterval(() => {
+  if (!running) return;
+  const rate = sent - lastSent; lastSent = sent;
+  const lines = [];
+  if (client && client.connected) lines.push(["ok", `מחובר לשרת · קוד ${$("code").value}`]);
+  else lines.push(["warn", "מתחבר לשרת…"]);
+  if (!lastEvent) lines.push(["warn", "ממתין לנתונים מהחיישן…"]);
+  else if (Date.now() - lastEvent > 3000) lines.push(["bad", "החיישן הפסיק לשלוח נתונים."]);
+  else lines.push(["ok", `שולח ${rate} עדכונים בשנייה`]);
+  if (reading && !reading.abs) lines.push(["warn", "הדפדפן מוסר כיוון יחסי בלבד, ולא ביחס לצפון. נסה Chrome או Safari."]);
+  if (reading && reading.acc != null && reading.acc > 25) lines.push(["warn", `דיוק המצפן נמוך (±${Math.round(reading.acc)}°): צייר 8 באוויר לכיול.`]);
+  setStatus(lines);
+}, 1000);
+
+async function start() {
+  const code = $("code").value.replace(/\D/g, "");
+  if (code.length !== 6) { setStatus([["bad", "הקלד את הקוד בן 6 הספרות שמופיע במסך התצוגה."]]); return; }
+  if (!window.isSecureContext) { setStatus([["bad", "הדפדפן מאפשר גישה לחיישנים רק בכתובת שמתחילה ב-https. פתח את הדף מכתובת מאובטחת."]]); return; }
+  if (typeof DeviceOrientationEvent === "undefined") { setStatus([["bad", "הדפדפן הזה לא תומך בחיישני כיוון."]]); return; }
+
+  // iPhone asks for permission, and only from a tap
+  if (typeof DeviceOrientationEvent.requestPermission === "function") {
+    try {
+      const r = await DeviceOrientationEvent.requestPermission();
+      if (r !== "granted") { setStatus([["bad", "לא ניתנה גישה לחיישני התנועה. אפשר לאשר מחדש בהגדרות Safari ולרענן את הדף."]]); return; }
+    } catch (e) { setStatus([["bad", "בקשת ההרשאה נכשלה: " + e.message]]); return; }
+  }
+
+  try { localStorage.setItem("compass-phone-code", code); } catch (e) {}
+  topic = PREFIX + code;
+  eventName = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+  window.addEventListener(eventName, onOrientation);
+
+  if (window.mqtt) {
+    client = mqtt.connect(BROKER, { clientId: "cmpp_" + Math.random().toString(16).slice(2, 10), reconnectPeriod: 2000, connectTimeout: 8000 });
+  } else {
+    setStatus([["bad", "ספריית החיבור לא נטענה. בדוק את חיבור האינטרנט ורענן את הדף."]]);
+  }
+
+  try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+
+  running = true; sent = 0; lastSent = 0; lastEvent = 0;
+  $("start").textContent = "עצור שידור";
+  $("start").classList.add("stop");
+  $("code").disabled = true;
+  setTimeout(() => {
+    if (running && !lastEvent) setStatus([["bad", "לא מתקבלים נתונים מהחיישן. ייתכן שלמכשיר אין מצפן, או שהדפדפן חוסם גישה לחיישנים."]]);
+  }, 3000);
+}
+
+function stop() {
+  running = false;
+  if (eventName) window.removeEventListener(eventName, onOrientation);
+  if (client) { client.end(true); client = null; }
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  $("start").textContent = "התחל לשדר";
+  $("start").classList.remove("stop");
+  $("code").disabled = false;
+  setStatus([["", "השידור נעצר."]]);
+}
+
+$("start").addEventListener("click", () => running ? stop() : start());
+document.addEventListener("visibilitychange", async () => {
+  if (running && document.visibilityState === "visible" && "wakeLock" in navigator) {
+    try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+});
+</script>
+</body>
+</html>
