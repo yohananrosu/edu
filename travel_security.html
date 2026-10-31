@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סיכוני מסע לישראלים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f5fa; --panel:#ffffff; --ink:#1b2333; --muted:#5b6578; --line:#dfe4ee;
+  --accent:#2d5bd7; --accent-soft:#e7eefc;
+  --l1:#1f8a4c; --l1-soft:#e3f5ea;
+  --l2:#9a7a00; --l2-soft:#fbf3d2;
+  --l3:#c25e00; --l3-soft:#fde9d6;
+  --l4:#c0392b; --l4-soft:#fbe2df;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1522; --panel:#18212f; --ink:#e7ecf5; --muted:#9aa6bb; --line:#2a3546;
+    --accent:#6f95ff; --accent-soft:#1f2c48;
+    --l1:#4cc380; --l1-soft:#163222;
+    --l2:#e8c547; --l2-soft:#352e12;
+    --l3:#f39a4a; --l3-soft:#3b2614;
+    --l4:#ff7a6b; --l4-soft:#3c1c19;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1522; --panel:#18212f; --ink:#e7ecf5; --muted:#9aa6bb; --line:#2a3546;
+  --accent:#6f95ff; --accent-soft:#1f2c48;
+  --l1:#4cc380; --l1-soft:#163222;
+  --l2:#e8c547; --l2-soft:#352e12;
+  --l3:#f39a4a; --l3-soft:#3b2614;
+  --l4:#ff7a6b; --l4-soft:#3c1c19;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Heebo",Arial,sans-serif;font-size:17px;line-height:1.6}
+header{background:linear-gradient(135deg,#13213a,#24407a);color:#fff;padding:30px 16px 24px}
+header .wrap,main{max-width:960px;margin:auto}
+header h1{margin:0 0 4px;font-size:clamp(26px,4.5vw,38px);font-weight:800}
+header p{margin:0;opacity:.85}
+header a{color:#cfdcff;font-size:14px;text-decoration:none}
+main{padding:22px 16px 50px;display:flex;flex-direction:column;gap:16px}
+a{color:var(--accent)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+.panel h2{margin:0 0 12px;font-size:22px}
+.search label{display:block;font-size:21px;font-weight:700;margin-bottom:12px}
+.search-row{display:flex;gap:10px;flex-wrap:wrap}
+.search input{flex:1 1 240px;min-width:0;font:inherit;font-size:18px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.search input:focus{outline:none;border-color:var(--accent)}
+.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:12px;padding:12px 20px;background:var(--accent);color:#fff;cursor:pointer}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn.small{padding:7px 14px;font-size:14px}
+.hint{margin:10px 0 0;color:var(--muted);font-size:14px}
+
+.msg{border-radius:14px;padding:12px 16px;font-weight:500}
+.msg.error{background:var(--l4-soft);color:var(--l4)}
+.msg.info{background:var(--accent-soft);color:var(--accent)}
+.msg.warn{background:var(--l2-soft);color:var(--ink)}
+.msg:empty{display:none}
+
+.lines{display:flex;flex-direction:column;gap:12px}
+.line{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 20px;display:grid;grid-template-columns:190px 1fr;gap:6px 18px;align-items:start}
+.line .k{font-weight:700;color:var(--muted);display:flex;gap:8px;align-items:center}
+.line .v{min-width:0;overflow-wrap:anywhere}
+.line .big{font-size:24px;font-weight:800}
+.line .pre{white-space:pre-line}
+@media (max-width:640px){ .line{grid-template-columns:1fr} }
+
+.lvl{display:inline-block;font-weight:800;border-radius:10px;padding:3px 12px;white-space:nowrap}
+.lvl.l1{background:var(--l1-soft);color:var(--l1)} .lvl.l2{background:var(--l2-soft);color:var(--l2)}
+.lvl.l3{background:var(--l3-soft);color:var(--l3)} .lvl.l4{background:var(--l4-soft);color:var(--l4)}
+.lvl.l0{background:var(--accent-soft);color:var(--muted)}
+.line.rec.l1{border-color:var(--l1);background:var(--l1-soft)} .line.rec.l2{border-color:var(--l2);background:var(--l2-soft)}
+.line.rec.l3{border-color:var(--l3);background:var(--l3-soft)} .line.rec.l4{border-color:var(--l4);background:var(--l4-soft)}
+.line.rec ul{margin:8px 0 0;padding-inline-start:20px}
+
+.stale{color:var(--l3);font-weight:700;font-size:14px}
+.fresh{color:var(--l1);font-weight:700;font-size:14px}
+.note{color:var(--muted);font-size:14px}
+
+.section-title{margin:14px 0 0;font-size:22px;font-weight:800;border-bottom:2px solid var(--line);padding-bottom:6px}
+
+.news{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.news li{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
+.news .tag{font-size:13px;font-weight:700;border-radius:8px;padding:1px 8px;display:inline-block;margin-inline-end:6px}
+.tag.fresh_local{background:var(--l4-soft);color:var(--l4)} .tag.old_local{background:var(--l3-soft);color:var(--l3)}
+.tag.old{background:var(--l2-soft);color:var(--l2)} .tag.elsewhere,.tag.unknown,.tag.background{background:var(--accent-soft);color:var(--accent)}
+.news .meta{font-size:13px;color:var(--muted)}
+.news .quote{font-size:15px;margin-top:4px;border-inline-start:3px solid var(--line);padding-inline-start:10px}
+.news a{font-weight:700;text-decoration:none}
+
+.spark{display:flex;align-items:flex-end;gap:2px;height:60px;margin-top:8px;direction:ltr}
+.spark span{flex:1;background:var(--accent);opacity:.75;border-radius:2px 2px 0 0;min-height:1px}
+.spark span.recent{opacity:1;background:var(--l3)}
+
+details summary{cursor:pointer;color:var(--accent);font-weight:500}
+.sources{display:flex;flex-direction:column;gap:4px;font-size:15px}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px;min-width:760px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th{color:var(--muted);font-weight:700;background:var(--bg);position:sticky;top:0}
+td.num{font-weight:800;text-align:center}
+.weekly-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.weekly-head h2{margin:0}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{text-align:center;color:var(--muted);font-size:13px;padding:6px 16px 30px;max-width:960px;margin:auto}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>סיכוני מסע לישראלים ויהודים בחו"ל</h1>
+    <p>אזהרות מסע רשמיות, דיווחי חדשות עדכניים ומגמות – במקום אחד.</p>
+    <a href="index.html">→ חזרה לדף הבית</a>
+  </div>
+</header>
+
+<main>
+  <form class="panel search" id="searchForm">
+    <label for="dest">לאן אתה רוצה לטייל - כתוב מדינה ועיר בירה?</label>
+    <div class="search-row">
+      <input id="dest" type="text" placeholder="לדוגמה: צרפת, פריז" autocomplete="off" required>
+      <button class="btn" id="goBtn" type="submit">בדוק סיכונים</button>
+    </div>
+    <p class="hint">אפשר לכתוב בעברית או באנגלית. החיפוש בחדשות לוקח כ-20 שניות, כי שירות GDELT מאפשר בקשה אחת כל כמה שניות.</p>
+  </form>
+
+  <div class="msg" id="msg" hidden></div>
+
+  <section id="result" hidden>
+    <div class="lines" id="mainLines"></div>
+    <h2 class="section-title">פירוט המקורות</h2>
+    <div class="lines" id="detailLines" style="margin-top:12px"></div>
+  </section>
+
+  <section class="panel" id="weekly">
+    <div class="weekly-head">
+      <h2>המדינות עם רמת האיום הגבוהה ביותר לישראלים ויהודים – השבוע האחרון</h2>
+      <button class="btn small" id="refreshWeekly" type="button">רענן עכשיו</button>
+    </div>
+    <p class="note" id="weeklyStatus"><span class="spinner"></span> טוען…</p>
+    <div class="table-wrap"><table id="weeklyTable" hidden>
+      <thead><tr>
+        <th>#</th><th>מדינה</th><th>רמת המל"ל</th><th>מחלקת המדינה (ארה"ב)</th>
+        <th>אירועים בשבוע</th><th>הדיווח האחרון</th><th>אופי האיום</th><th>ציון</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="msg warn" id="weeklyOfficial" style="margin-top:12px"></p>
+    <p class="hint">הציון משקלל את רמת האיום של המל"ל עם אירועים אנטישמיים ואירועים נגד ישראלים שזוהו בחדשות בשבעת הימים האחרונים. הטבלה מתעדכנת אוטומטית כל שעה.</p>
+  </section>
+
+  <section class="panel">
+    <h2>מקורות המידע</h2>
+    <div class="sources" id="sources"></div>
+  </section>
+</main>
+
+<footer>
+  זהו כלי עזר בלבד ולא מקור רשמי. ההנחיות המחייבות הן של
+  <a href="https://www.gov.il/he/departments/dynamiccollectors/travel-warnings-nsc" target="_blank" rel="noopener">המטה לביטחון לאומי</a>.
+  נתונים: data.gov.il · travel.state.gov · GDELT Project
+</footer>
+
+<script>
+// ===================== הגדרות =====================
+const CKAN = "https://data.gov.il/api/3/action/";
+const WARNINGS_DATASET = "travelwarnings";
+const WARNINGS_RESOURCE = "2a01d234-b2b0-4d46-baa0-cec05c401e7d";
+const US_FILE = "data/us_travel_advisories.json";
+const GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc";
+const GDELT_CTX = "https://api.gdeltproject.org/api/v2/context/context";
+const TZ = "Asia/Jerusalem";
+const FRESH_DAYS = 3;
+const GDELT_GAP_MS = 6000;
+const WEEKLY_CACHE_KEY = "travel_security_weekly_v1";
+const WEEKLY_CACHE_MS = 30 * 60 * 1000;
+const WEEKLY_REFRESH_MS = 60 * 60 * 1000;
+
+// מקור שאינו חינמי מסומן free:false ומדולג
+const SOURCES = [
+  { id: "nsc",   name: 'אזהרות מסע – המטה לביטחון לאומי (data.gov.il)', free: true },
+  { id: "mfa",   name: "מידע קונסולרי – משרד החוץ (data.gov.il)", free: true },
+  { id: "us",    name: "Travel Advisories – מחלקת המדינה האמריקאית (מקור משלים)", free: true },
+  { id: "gdelt", name: "GDELT – דיווחי חדשות ממקורות בינלאומיים", free: true },
+  { id: "acled", name: "ACLED – מאגר אירועים אלימים", free: false, why: "דורש הרשמה ומפתח API" }
+];
+const sourceStatus = {};
+
+// ===================== מדינות =====================
+// עברית (כמו אצל המל"ל) | כינויים | אנגלית | שם אצל מחלקת המדינה | בירה | בירה בעברית | ערים נוספות
+// "~" לפני מונח = משמש בחיפוש אך לא לזיהוי מיקום בטקסט (שם דו-משמעי)
+const COUNTRY_DATA = `
+אוגנדה||Uganda||Kampala|קמפלה|
+אוזבקיסטאן|אוזבקיסטן|Uzbekistan||Tashkent|טשקנט|Samarkand,Bukhara
+אוסטריה||Austria||Vienna|וינה|Salzburg,Innsbruck
+אוסטרליה||Australia||Canberra|קנברה|Sydney,Melbourne,Bondi,Perth,Brisbane,Adelaide
+אוקראינה||Ukraine||Kyiv|קייב|Kiev,Uman,Odesa,Odessa,Lviv,Kharkiv,Dnipro
+אורוגואי||Uruguay||Montevideo|מונטווידאו|
+אזרביג'אן|אזרבייג'ן,אזרבייגן|Azerbaijan||Baku|באקו|
+איחוד האמירויות הערביות|איחוד האמירויות,האמירויות,אמירויות|United Arab Emirates||Abu Dhabi|אבו דאבי|Dubai,UAE,Sharjah,Emirati
+איטליה||Italy||Rome|רומא|Milan,Venice,Florence,Naples
+איי הבהאמס|בהאמס|Bahamas|The Bahamas|Nassau|נסאו|
+איי מרשל||Marshall Islands||Majuro|מאג'ורו|
+איי סיישל|סיישל|Seychelles||~Victoria|ויקטוריה|
+איי קוק||Cook Islands||Avarua|אווארואה|
+איי שלמה||Solomon Islands||Honiara|הוניארה|
+אינדונזיה||Indonesia||Jakarta|ג'קרטה|Bali
+איסלנד||Iceland||Reykjavik|רייקיאוויק|
+איראן||Iran||Tehran|טהרן|
+אירלנד||Ireland||Dublin|דבלין|Cork
+אל סלבדור||El Salvador||San Salvador|סן סלבדור|
+אלבניה||Albania||Tirana|טירנה|
+אלג'יריה||Algeria||Algiers|אלג'יר|
+אנגולה||Angola||Luanda|לואנדה|
+אנדורה||Andorra||Andorra la Vella|אנדורה לה וייה|
+אנטיגואה-ברבודה|אנטיגואה וברבודה,אנטיגואה|Antigua and Barbuda||~St. John's|סנט ג'ונס|
+אסוואטיני|סוואזילנד|Eswatini||Mbabane|מבבנה|Swaziland
+אסטוניה||Estonia||Tallinn|טאלין|
+אפגניסטן|אפגניסטאן|Afghanistan||Kabul|קאבול|
+אקוואדור|אקוודור|Ecuador||Quito|קיטו|Guayaquil
+ארגנטינה||Argentina||Buenos Aires|בואנוס איירס|
+אריתריאה||Eritrea||Asmara|אסמרה|
+ארמניה||Armenia||Yerevan|ירוואן|
+ארצות הברית|ארה"ב,ארהב,אמריקה|United States|United States|~Washington|וושינגטון|New York,Manhattan,Brooklyn,Los Angeles,Chicago,Miami,Boston,Philadelphia,Pittsburgh,San Francisco,New Jersey,USA,U.S.
+אתיופיה||Ethiopia||Addis Ababa|אדיס אבבה|
+בהוטן||Bhutan||Thimphu|תימפו|
+בוטסואנה||Botswana||Gaborone|גבורונה|
+בולגריה||Bulgaria||~Sofia|סופיה|Burgas,Varna
+בוליביה||Bolivia||La Paz|לה פאס|Sucre
+בוסניה הרצגובינה|בוסניה,בוסניה והרצגובינה|Bosnia and Herzegovina||Sarajevo|סרייבו|Bosnia
+בורונדי||Burundi||Gitega|גיטגה|Bujumbura
+בורקינה פאסו||Burkina Faso||Ouagadougou|ואגדוגו|
+בחריין||Bahrain||Manama|מנאמה|
+בלארוס|בלרוס,ביילרוס|Belarus||Minsk|מינסק|
+בלגיה||Belgium||Brussels|בריסל|Antwerp,Liege,Ghent
+בליז||Belize||Belmopan|בלמופן|
+בנגלדש||Bangladesh||Dhaka|דאקה|
+בנין||Benin||Porto-Novo|פורטו נובו|Cotonou
+ברבדוס||Barbados||Bridgetown|ברידג'טאון|
+ברוניי||Brunei||Bandar Seri Begawan|בנדר סרי בגוואן|
+ברזיל||Brazil||Brasilia|ברזיליה|Rio de Janeiro,Sao Paulo,São Paulo
+בריטניה|אנגליה,הממלכה המאוחדת,סקוטלנד,אנגלייה|United Kingdom|United Kingdom|London|לונדון|Manchester,Birmingham,Glasgow,Edinburgh,Leeds,Liverpool,Belfast,Golders Green,Stamford Hill,England,Scotland,Britain,British,UK
+גאבון|גבון|Gabon||Libreville|ליברוויל|
+ג'יבוטי||Djibouti||Djibouti|ג'יבוטי|
+ג'מאיקה|ג'מייקה|Jamaica||~Kingston|קינגסטון|
+גאנה||Ghana||Accra|אקרה|
+גואטמלה||Guatemala||Guatemala City|גואטמלה סיטי|
+גויאנה||Guyana||Georgetown|ג'ורג'טאון|
+גיאורגיה|גאורגיה,ג'ורג'יה|~Georgia||Tbilisi|טביליסי|Batumi
+גינאה||~Guinea||Conakry|קונאקרי|
+גינאה-ביסאו|גינאה ביסאו|Guinea-Bissau||Bissau|ביסאו|
+גינאה המשוונית||Equatorial Guinea||Malabo|מלאבו|
+גמביה||Gambia|The Gambia|Banjul|בנג'ול|
+גרמניה||Germany||Berlin|ברלין|Munich,Frankfurt,Hamburg,Cologne,Halle,Dusseldorf,Düsseldorf,German
+גרנדה||Grenada||~St. George's|סנט ג'ורג'ס|
+דומיניקה||~Dominica||Roseau|רוזו|
+דנמרק||Denmark||Copenhagen|קופנהגן|Danish
+דרום אפריקה||South Africa||Pretoria|פרטוריה|Johannesburg,Cape Town,Durban
+דרום סודאן|דרום סודן|South Sudan||Juba|ג'ובה|
+האיטי||Haiti||Port-au-Prince|פורט או פרנס|
+האיים המלדיביים|מלדיביים,מלדיבים,איים המלדיביים|Maldives||~Male|מאלה|
+הודו||India||New Delhi|ניו דלהי|Delhi,Mumbai,Goa,Manali,Kasol,Dharamshala,Rishikesh,Kolkata,Bangalore,Pushkar
+הולנד||Netherlands||Amsterdam|אמסטרדם|Rotterdam,The Hague,Dutch
+הונג קונג||Hong Kong||Hong Kong|הונג קונג|
+הונגריה||Hungary||Budapest|בודפשט|
+הונדורס||Honduras||Tegucigalpa|טגוסיגלפה|
+הרפובליקה הדומיניקנית|דומיניקנית,הרפובליקה הדומיניקאית|Dominican Republic||Santo Domingo|סנטו דומינגו|Punta Cana
+הרפובליקה המרכז אפריקנית|רפובליקה מרכז אפריקנית|Central African Republic||Bangui|בנגי|
+הרפובליקה של קונגו|קונגו ברזוויל|Republic of the Congo|Republic of Congo|Brazzaville|ברזוויל|
+הרפובליקה הדמוקרטית של קונגו|קונגו,קונגו קינשאסה|Democratic Republic of the Congo||Kinshasa|קינשאסה|DRC,Goma
+ואטיקאן-הכס הקדוש|ותיקן,הוותיקן,ואטיקן,ואטיקאן|Vatican|Holy See|Vatican City|קריית הוותיקן|
+וייטנאם|ויאטנם,וויטנאם,ויטנאם|Vietnam||Hanoi|האנוי|Ho Chi Minh City,Saigon
+ונואטו||Vanuatu||Port Vila|פורט וילה|
+ונצואלה||Venezuela||Caracas|קראקס|
+זימבאבווה||Zimbabwe||Harare|הררה|
+זמביה||Zambia||Lusaka|לוסקה|
+חוף השנהב (קוט דיוואר)|חוף השנהב,קוט דיוואר|Ivory Coast|Côte d'Ivoire|Yamoussoukro|יאמוסוקרו|Abidjan,Cote d'Ivoire,Côte d'Ivoire
+טג'קיסטאן|טג'יקיסטן,טג'קיסטן|Tajikistan||Dushanbe|דושנבה|
+טובלו|טובאלו|Tuvalu||Funafuti|פונאפוטי|
+טוגו||Togo||Lome|לומה|
+טונגה||Tonga||Nuku'alofa|נוקואלופה|
+טייואן|טאיוואן,טיוואן|Taiwan||Taipei|טאיפיי|
+טנזניה||Tanzania||Dodoma|דודומה|Dar es Salaam,Zanzibar
+טרינידד וטובגו|טרינידד|Trinidad and Tobago||Port of Spain|פורט אוף ספיין|
+יוון||Greece||Athens|אתונה|Thessaloniki,Crete,Rhodes,Corfu,Greek
+יפן||Japan||Tokyo|טוקיו|Kyoto,Osaka
+ירדן||~Jordan||Amman|עמאן|Petra,Aqaba
+כווית||Kuwait||Kuwait City|כווית סיטי|
+לאוס, רפובליקה דמוקרטית עממית|לאוס|Laos||Vientiane|ויינטיאן|Luang Prabang
+לבנון||Lebanon||Beirut|ביירות|
+לוב||Libya||Tripoli|טריפולי|Benghazi
+לוקסמבורג||Luxembourg||Luxembourg|לוקסמבורג|
+לטביה||Latvia||Riga|ריגה|
+ליבריה||Liberia||Monrovia|מונרוביה|
+ליטא||Lithuania||Vilnius|וילנה|
+ליכטנשטיין||Liechtenstein||Vaduz|ואדוץ|
+לסוטו||Lesotho||Maseru|מסרו|
+מאוריטניה||Mauritania||Nouakchott|נואקשוט|
+מאוריציוס||Mauritius||Port Louis|פורט לואי|
+מאלי||Mali||Bamako|במאקו|
+מדגסקר||Madagascar||Antananarivo|אנטננריבו|
+מוזמביק||Mozambique||Maputo|מאפוטו|
+מולדובה||Moldova||Chisinau|קישינב|
+מונגוליה||Mongolia||Ulaanbaatar|אולן בטור|
+מונטנגרו||Montenegro||Podgorica|פודגוריצה|
+מונקו|מונאקו|Monaco||Monaco|מונקו|
+מזרח טימור||Timor-Leste|Timor-Leste|Dili|דילי|East Timor
+מיאנמר|בורמה|Myanmar|Burma|Naypyidaw|נייפידו|Yangon,Burma
+מיקרונזיה||Micronesia|Federated States of Micronesia|Palikir|פליקיר|
+מקסיקו||Mexico||Mexico City|מקסיקו סיטי|Cancun,Tulum
+מלאווי|מלאוי|Malawi||Lilongwe|לילונגווה|
+מלזיה||Malaysia||Kuala Lumpur|קואלה לומפור|
+מלטה||Malta||Valletta|ולטה|
+מצרים||Egypt||Cairo|קהיר|Sinai,Alexandria,Sharm el-Sheikh,Taba
+מרוקו||Morocco||Rabat|רבאט|Marrakech,Casablanca,Fez
+נאורו||Nauru|Naoero|Yaren|יארן|
+נורבגיה||Norway||Oslo|אוסלו|
+ניגריה||Nigeria||Abuja|אבוג'ה|Lagos
+ניו זילנד|ניוזילנד|New Zealand||Wellington|ולינגטון|Auckland,Christchurch
+ניז'ר||Niger||Niamey|ניאמיי|
+ניקרגואה||Nicaragua||Managua|מנגואה|
+נמיביה||Namibia||Windhoek|וינדהוק|
+נפאל||Nepal||Kathmandu|קטמנדו|Pokhara
+סאו תומה ופרינציפה||Sao Tome and Principe|São Tomé and Príncipe|Sao Tome|סאו תומה|
+סודאן|סודן|Sudan||Khartoum|חרטום|
+סומליה||Somalia||Mogadishu|מוגדישו|
+סומלילנד||Somaliland||Hargeisa|הרגייסה|
+סוריה||Syria||Damascus|דמשק|Aleppo
+סורינם||Suriname||Paramaribo|פרמריבו|
+סנט וינסנט והגרנדינים|סט' וינסנט והגרנדינים,סנט וינסנט והגרנדינס,סנט וינסנט|Saint Vincent and the Grenadines||Kingstown|קינגסטאון|
+סנט לוסיה|סט' לוציה|Saint Lucia||Castries|קסטריס|
+סנט קיטס ונוויס|סט' קיטס ונביס|Saint Kitts and Nevis||Basseterre|בסטר|
+סיירה ליאונה|סיירה לאונה|Sierra Leone||Freetown|פריטאון|
+סין||China||Beijing|בייג'ינג|Shanghai,Chinese
+סינגפור||Singapore||Singapore|סינגפור|
+סלובניה||Slovenia||Ljubljana|ליובליאנה|
+סלובקיה||Slovakia||Bratislava|ברטיסלבה|
+סמואה||Samoa||Apia|אפיה|
+סן מרינו||San Marino||San Marino|סן מרינו|
+סנגל||Senegal||Dakar|דקר|
+ספרד||Spain||Madrid|מדריד|Barcelona,Valencia,Seville,Malaga,Spanish
+סרביה||Serbia||Belgrade|בלגרד|
+סרי לנקה||Sri Lanka||Colombo|קולומבו|
+עומאן|עומן|Oman||Muscat|מוסקט|
+עיראק||Iraq||Baghdad|בגדד|Erbil
+ערב הסעודית|סעודיה|Saudi Arabia||Riyadh|ריאד|Jeddah,Mecca
+פולין||Poland||Warsaw|ורשה|Krakow,Kraków,Lodz
+פורטוגל||Portugal||Lisbon|ליסבון|Porto
+פיג'י||Fiji||Suva|סובה|
+פיליפינים|הפיליפינים|Philippines||Manila|מנילה|
+פינלנד||Finland||Helsinki|הלסינקי|
+פלאו||Palau||Ngerulmud|נגרולמוד|
+פנמה||Panama||Panama City|פנמה סיטי|
+פפואה ניו גיני||Papua New Guinea||Port Moresby|פורט מורסבי|
+פקיסטאן|פקיסטן|Pakistan||Islamabad|איסלמבאד|Karachi,Lahore
+פרגוואי||Paraguay||Asuncion|אסונסיון|
+פרו||Peru||Lima|לימה|Cusco,Cuzco
+צ'אד||~Chad||N'Djamena|נג'מנה|
+צ'ילה||Chile||Santiago|סנטיאגו|
+צ'כיה|הרפובליקה הצ'כית|Czech Republic|Czechia|Prague|פראג|Czechia
+צפון מקדוניה|מקדוניה|North Macedonia||Skopje|סקופיה|
+צרפת||France||Paris|פריז|Marseille,Lyon,Toulouse,Strasbourg,Sarcelles,French
+צ'צניה||Chechnya||Grozny|גרוזני|
+קובה||Cuba||Havana|הוואנה|
+קולומביה||Colombia||Bogota|בוגוטה|Medellin,Medellín,Cartagena
+קומורוס|קומורו|Comoros||Moroni|מורוני|
+קוסובו||Kosovo||Pristina|פרישטינה|
+קוסטה ריקה|קוסטריקה|Costa Rica||San Jose|סן חוסה|
+קוריאה הדרומית|דרום קוריאה|South Korea||Seoul|סיאול|
+קוריאה הצפונית|צפון קוריאה|North Korea||Pyongyang|פיונגיאנג|
+קזחסטאן|קזחסטן|Kazakhstan||Astana|אסטנה|Almaty
+קטר||Qatar||Doha|דוחה|
+קייפ ורדה|כף ורדה|Cape Verde|Cabo Verde|Praia|פראיה|
+קירגיסטאן|קירגיזסטן,קירגיסטן|Kyrgyzstan|The Kyrgyz Republic|Bishkek|בישקק|
+קיריבטי|קיריבאטי|Kiribati||Tarawa|טרווה|
+קמבודיה||Cambodia||Phnom Penh|פנום פן|Siem Reap
+קמרון||Cameroon||Yaounde|יאונדה|
+קנדה||Canada||Ottawa|אוטווה|Toronto,Montreal,Vancouver,Winnipeg,Calgary,Ontario,Quebec,Canadian
+קניה|קנייה|Kenya||Nairobi|ניירובי|Mombasa
+קפריסין||Cyprus||Nicosia|ניקוסיה|Larnaca,Limassol,Paphos,Ayia Napa
+קרואטיה||Croatia||Zagreb|זאגרב|Dubrovnik
+רואנדה||Rwanda||Kigali|קיגאלי|
+רומניה||Romania||Bucharest|בוקרשט|
+רוסיה||Russia||Moscow|מוסקבה|St Petersburg,Saint Petersburg,Dagestan,Makhachkala,Russian
+שבדיה|שוודיה|Sweden||Stockholm|שטוקהולם|Malmo,Malmö,Gothenburg,Swedish
+שווייץ|שוויץ|Switzerland||Bern|ברן|Zurich,Geneva,Basel,Swiss
+תאילנד||Thailand||Bangkok|בנגקוק|Phuket,Koh Phangan,Ko Pha Ngan,Chiang Mai,Koh Samui
+תוניסיה||Tunisia||Tunis|תוניס|Djerba
+תורכיה|טורקיה|Turkey|Turkey|Ankara|אנקרה|Istanbul,Antalya,Izmir,Türkiye,Turkish
+תורכמניסטאן|טורקמניסטן,טורקמניסטאן|Turkmenistan||Ashgabat|אשגבאט|
+תימן||Yemen||Sanaa|צנעא|Aden,Houthi
+`;
+
+const searchTerm = t => t.replace(/^~/, "");
+const COUNTRIES = COUNTRY_DATA.trim().split("\n").map(line => {
+  const [he, alt, en, us, cap, capHe, cities] = line.split("|");
+  const c = {
+    he, alt: alt ? alt.split(",") : [],
+    en: searchTerm(en), us: us || searchTerm(en),
+    cap: searchTerm(cap), capHe,
+    cities: cities ? cities.split(",") : []
+  };
+  // מונחים לזיהוי מיקום בטקסט באנגלית (ללא מונחים דו-משמעיים)
+  const detect = [en, cap, ...c.cities].filter(t => t && !t.startsWith("~"));
+  c.rx = detect.length ? new RegExp("(?<![\\p{L}\\p{N}])(" + detect.map(escRe).join("|") + ")(?![\\p{L}\\p{N}])", "iu") : null;
+  return c;
+});
+
+// ===================== עזרים =====================
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch])); }
+function norm(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[׳'`’"״]/g, "").replace(/[-,./()]/g, " ").replace(/\s+/g, " ").trim();
+}
+function fmtDate(d, withTime = true) {
+  if (!d || isNaN(d)) return "לא ידוע";
+  const o = { timeZone: TZ, day: "2-digit", month: "2-digit", year: "numeric" };
+  if (withTime) Object.assign(o, { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString("he-IL", o);
+}
+const ageDays = d => (Date.now() - d.getTime()) / 864e5;
+function freshness(d) {
+  if (!d || isNaN(d)) return `<span class="stale">⚠️ תאריך לא ידוע</span>`;
+  const days = ageDays(d);
+  if (days <= FRESH_DAYS) return `<span class="fresh">✓ עדכני</span>`;
+  return `<span class="stale">⚠️ לא עודכן ב-${FRESH_DAYS} הימים האחרונים – לפני ${Math.floor(days)} ימים</span>`;
+}
+function parseSeen(s) { // 20261031T111655Z
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(s || "");
+  return m ? new Date(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6])) : null;
+}
+function showMsg(text, type = "info") { $("msg").textContent = text; $("msg").className = "msg " + type; $("msg").hidden = false; }
+function hideMsg() { $("msg").hidden = true; }
+function setSource(id, state, text) { sourceStatus[id] = { state, text }; renderSources(); }
+function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+const LEVEL_INFO = {
+  1: { cls: "l1", nsc: "רמה 1 – איום נמוך", rec: "סיכון נמוך – אמצעי זהירות רגילים" },
+  2: { cls: "l2", nsc: "רמה 2 – איום מזדמן", rec: "סיכון מזדמן – זהירות מוגברת" },
+  3: { cls: "l3", nsc: "רמה 3 – איום בינוני", rec: "סיכון בינוני – הימנעו מנסיעות שאינן חיוניות" },
+  4: { cls: "l4", nsc: "רמה 4 – איום גבוה", rec: "סיכון גבוה – הימנעו מנסיעה" }
+};
+const badge = (lvl, text) => `<span class="lvl ${lvl ? LEVEL_INFO[lvl].cls : "l0"}">${esc(text)}</span>`;
+
+// ===================== מקור 1: אזהרות רשמיות (data.gov.il) =====================
+let warnings = null; // { nsc: Map, mfa: Map, updated: Date }
+
+async function loadWarnings() {
+  if (warnings) return warnings;
+  const filters = JSON.stringify({ "משרד": ['מל"ל', "חוץ"] });
+  const [rows, pkg] = await Promise.all([
+    fetch(`${CKAN}datastore_search?resource_id=${WARNINGS_RESOURCE}&limit=1000&filters=${encodeURIComponent(filters)}`).then(r => r.json()),
+    fetch(`${CKAN}package_show?id=${WARNINGS_DATASET}`).then(r => r.json())
+  ]);
+  if (!rows.success) throw new Error("data.gov.il לא החזיר נתונים");
+  const res = (pkg.result?.resources || []).find(r => r.id === WARNINGS_RESOURCE);
+  const stamp = res?.last_modified || pkg.result?.metadata_modified;
+  const nsc = new Map(), mfa = new Map();
+  for (const r of rows.result.records) {
+    const map = r["משרד"] === "חוץ" ? mfa : nsc;
+    const key = norm(r.country);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  }
+  warnings = { nsc, mfa, updated: stamp ? new Date(stamp.endsWith("Z") ? stamp : stamp + "Z") : null };
+  setSource("nsc", "ok", `נטען · ${nsc.size} מדינות · עודכן ${fmtDate(warnings.updated, false)}`);
+  setSource("mfa", "ok", `נטען · ${mfa.size} מדינות`);
+  return warnings;
+}
+
+// אזהרה "משולבת" מציינת כמה רמות לאזורים שונים (למשל רמה 4 בדרום ורמה 2 בשאר המדינה).
+// הרמה לבירה: הרמה שמופיעה באותו קטע עם שם הבירה, אחרת הרמה הנמוכה ("שאר שטחי המדינה").
+function parseNscLevel(text, capHe) {
+  if (!text) return null;
+  const rx = /\((?:רמה\s*)?([1-4])(?:\s*\/\s*([1-4]))?\)|רמה\s*([1-4])/g;
+  const levels = [];
+  let capLevel = null;
+  for (const seg of text.split(/[\n.]|(?=איום (?:מזדמן|בינוני|גבוה|נמוך))/)) {
+    const found = [...seg.matchAll(rx)].flatMap(m => [m[1], m[2], m[3]].filter(Boolean).map(Number));
+    levels.push(...found);
+    if (capHe && found.length && seg.includes(capHe)) capLevel = Math.max(capLevel || 0, ...found);
+  }
+  if (!levels.length) return /אין אזהרת מסע/.test(text) ? { level: 1, min: 1, max: 1, label: "1", combined: false } : null;
+  const min = Math.min(...levels), max = Math.max(...levels);
+  const level = capLevel || min;
+  return { level, min, max, combined: min !== max, label: min !== max ? `${level} (עד ${max} באזורים מסוימים)` : String(max) };
+}
+function linkFrom(html) { const m = /href="([^"]+)"/.exec(html || ""); return m ? m[1] : null; }
+
+function warningFor(map, c) {
+  const rows = [c.he, ...c.alt].flatMap(n => map.get(norm(n)) || []);
+  if (!rows.length) return null;
+  const parsed = rows.map(r => ({ row: r, lvl: parseNscLevel(r.recommendations, c.capHe) }));
+  parsed.sort((a, b) => (b.lvl?.max || 0) - (a.lvl?.max || 0));
+  const best = parsed[0];
+  return { text: (best.row.recommendations || "").trim(), lvl: best.lvl, link: linkFrom(best.row.details), country: best.row.country };
+}
+
+// ===================== מקור 2: מחלקת המדינה האמריקאית =====================
+let usData = null;
+async function loadUS() {
+  if (usData) return usData;
+  const res = await fetch(US_FILE, { cache: "no-cache" });
+  if (!res.ok) throw new Error("קובץ הנתונים עדיין לא קיים באתר");
+  const j = await res.json();
+  const map = new Map();
+  for (const a of j.advisories || []) {
+    const name = a.title.split(" - ")[0].replace(/travel advisory/i, "").trim();
+    const m = /Level (\d)/i.exec(a.title) || /Level (\d)/i.exec(a.summary || "");
+    map.set(norm(name).replace(/^the /, ""), { ...a, level: m ? +m[1] : null, updatedDate: new Date(a.updated) });
+  }
+  usData = { map, fetched: new Date(j.fetched) };
+  setSource("us", "ok", `נטען מהעותק באתר · נאסף ב-${fmtDate(usData.fetched)} ${ageDays(usData.fetched) > FRESH_DAYS ? "(ישן – בדוק שה-GitHub Action פעיל)" : ""}`);
+  return usData;
+}
+function usFor(c) {
+  if (!usData) return null;
+  for (const n of [c.us, c.en]) {
+    const a = usData.map.get(norm(n).replace(/^the /, ""));
+    if (a) return a;
+  }
+  return null;
+}
+const US_LABELS = { 1: "Level 1 – זהירות רגילה", 2: "Level 2 – זהירות מוגברת", 3: "Level 3 – שקלו מחדש את הנסיעה", 4: "Level 4 – אל תיסעו" };
+
+// ===================== מקור 3: GDELT =====================
+const gQueue = []; let gBusy = false, gLast = 0;
+function gdelt(base, params, priority = 0) {
+  return new Promise((resolve, reject) => {
+    gQueue.push({ base, params, priority, resolve, reject });
+    gQueue.sort((a, b) => b.priority - a.priority);
+    pumpGdelt();
+  });
+}
+async function pumpGdelt() {
+  if (gBusy) return;
+  gBusy = true;
+  while (gQueue.length) {
+    const job = gQueue.shift();
+    try { job.resolve(await gdeltCall(job.base, job.params)); } catch (e) { job.reject(e); }
+  }
+  gBusy = false;
+}
+async function gdeltCall(base, params) {
+  const url = base + "?" + new URLSearchParams({ ...params, format: "json" });
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const wait = gLast + GDELT_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    gLast = Date.now();
+    let res;
+    try { res = await fetch(url); } catch { continue; }
+    if (res.status === 429) { gLast = Date.now() + GDELT_GAP_MS * (attempt + 1); continue; }
+    if (!res.ok) throw new Error("GDELT החזיר שגיאה " + res.status);
+    const text = (await res.text()).trim();
+    if (!text) return {};
+    if (text[0] !== "{") throw new Error("GDELT: " + text.slice(0, 120));
+    try { return JSON.parse(text); } catch { return JSON.parse(text.replace(/[\u0000-\u001f]+/g, " ")); }
+  }
+  throw new Error("שירות GDELT עמוס כרגע. נסה שוב בעוד דקה.");
+}
+
+const TARGET_Q = "(synagogue OR antisemitic OR antisemitism OR jewish OR jews OR israeli OR israelis)";
+const ATTACK_Q = "(attack OR attacked OR assault OR stabbed OR shooting OR arson OR vandalized OR threatened)";
+const quoteTerm = t => /\s/.test(t) ? `"${t}"` : t;
+// GDELT דוחה שאילתות ארוכות (כ-250 תווים), לכן מקצרים את רשימת המקומות לפי הצורך
+const GDELT_MAX_QUERY = 235;
+function buildQuery(c, suffix = "") {
+  const terms = [...new Set([c.en, c.cap, ...c.cities.filter(t => !t.startsWith("~") && t.length > 3)].map(searchTerm))];
+  for (let n = Math.min(4, terms.length); n >= 1; n--) {
+    const loc = n === 1 ? quoteTerm(terms[0]) : "(" + terms.slice(0, n).map(quoteTerm).join(" OR ") + ")";
+    const q = `${loc} ${TARGET_Q} ${ATTACK_Q}${suffix}`;
+    if (q.length <= GDELT_MAX_QUERY || n === 1) return q;
+  }
+}
+
+// ----- בדיקת תוכן הידיעה (לא רק מילות מפתח) -----
+const RX = {
+  target: /\b(jew|jews|jewish|synagogues?|antisemit\w*|anti-semit\w*|israelis?|chabad|kosher|rabbis?|yeshiva|kippah|yarmulke|zionists?)\b/i,
+  diaspora: /\b(synagogues?|jews|jewish (community|communities|school|schools|center|centre|man|woman|men|women|boy|girl|teen|student|students|worshippers|people|family|families|couple|cemetery|museum|restaurant|shop|store|business|institutions?|tourists?|visitors?)|israeli (tourists?|travell?ers?|backpackers?|visitors?|citizens?|students?|man|woman|men|women|couple|family|families|nationals?)|chabad|kosher|rabbis?|antisemit\w*|anti-semit\w*)\b/i,
+  sev3: /\b(killed|killing|murder(ed|s)?|shooting|shot|gunman|gunmen|gunfire|stabb(ed|ing)|bomb(ed|ing|s)?|explosives?|explosion|firebomb\w*|molotov|arson\w*|set (on )?fire|torched|hostages?|kidnapp?\w*|ramm(ed|ing)|terror(ist)? (attack|plot|cell))\b/i,
+  sev2: /\b(attack(ed|s|er|ers)?|assault(ed|s)?|beat(en|ing)?|punch(ed)?|injur(ed|ies)|wounded|threat(s|en|ened|ening)?|plot(s|ted)?|foiled|harass(ed|ment)?|chased|mob|spat|lynch\w*|violen(ce|t))\b/i,
+  sev1: /\b(vandali[sz]\w*|graffiti|swastikas?|desecrat\w*|daubed|smashed|hate crimes?|slurs?|intimidat\w*)\b/i,
+  military: /\b(idf|israeli (army|military|forces|troops|soldiers|jets|warplanes|drones?|strikes?|airstrikes?|air strikes?|raids?|bombardment|occupation|government|police|minister)|israel (struck|strikes|bombed|attacked|launched)|air ?strikes?|wars?|missiles?|nuclear|foreign minister|gaza|west bank|hezbollah|houthis?|ceasefire|hebron|jenin|rafah|khan younis|palestinians? (killed|wounded)|settlers?|knesset|netanyahu)\b/i,
+  // מילים שמתארות קורבן אזרחי (ולא "Israeli" כתואר לצבא או לממשלה)
+  victim: /\b(jew|jews|jewish|synagogues?|antisemit\w*|anti-semit\w*|israelis|israeli (tourists?|travell?ers?|backpackers?|visitors?|citizens?|students?|man|woman|men|women|couple|family|families|nationals?|fans?|businessman|teen)|chabad|kosher|rabbis?|yeshiva|kippah|yarmulke)\b/i,
+  opinion: /\b(opinion|op-ed|editorial|commentary|letters? to the editor|readers|columnist|podcast|campaign(s|ing)?|election|senate|candidate|polls?|debate|apologi[sz]ed|report (finds|shows|says)|survey|study|lawmakers?|commissioner|warns? of|(i|we) (fear|think|believe|heard|argue|warn)|tour|concert|actor|singer|celebrity|magazine)\b/i,
+  trend: /\b(oct(ober)?\.? 7(th)?|rise in antisemitism|surge in antisemitism|rising antisemitism|wave of antisemitism|spike in antisemit\w*)\b/i,
+  historical: /\b(anniversary|turns \d+|centenary|centennial|historic|years? ago|decades? ago|months? (ago|after)|more than a (week|month|year) (after|since)|last year|in (19|20)\d\d|commemorat\w*|trial|sentenced|sentence|convicted|pleaded|plea deal|verdict|jury|appeal|suspended sentence|jailed|gets (more than )?\d+ years|years (in prison|behind bars)|leaves hospital|released from (the )?hospital|recover(y|ing)|vigil|funeral)\b/i,
+  junkTitle: /^(tag|tags|category|topic|topics|search|archive)s?\s*[:\-–]/i,
+  recent: /\b(today|tonight|this morning|this afternoon|this evening|last night|overnight|hours ago|breaking)\b/i
+};
+
+function detectCountries(text) {
+  const t = text.replace(/northern ireland/gi, "Belfast");
+  const found = [];
+  for (const c of COUNTRIES) {
+    if (!c.rx) continue;
+    const m = c.rx.exec(t);
+    if (m) found.push({ c, at: m.index });
+  }
+  return found.sort((a, b) => a.at - b.at).map(f => f.c);
+}
+
+const RXG = Object.fromEntries(Object.entries(RX).map(([k, r]) => [k, new RegExp(r.source, "gi")]));
+const positions = (s, key) => [...s.matchAll(RXG[key])].map(m => m.index);
+
+// חומרת המשפט: רק אם הפגיעה מופיעה קרוב (עד ~70 תווים) למילה שמציינת יהודים/ישראלים/בית כנסת
+function sentenceSeverity(s) {
+  if (RX.military.test(s) && !RX.diaspora.test(s)) return 0;
+  const targets = positions(s, "victim");
+  if (!targets.length) return 0;
+  const near = key => positions(s, key).some(i => targets.some(j => Math.abs(i - j) <= 70));
+  return near("sev3") ? 3 : near("sev2") ? 2 : near("sev1") ? 1 : 0;
+}
+const splitSentences = text => (text || "").split(/(?<=[.!?])\s+|\n+/).filter(s => s.length > 12);
+
+function analyze(a, dest) {
+  const body = [a.sentence, a.context].filter(Boolean).join(" ");
+  const text = (a.title || "") + ". " + body;
+  const date = parseSeen(a.seendate);
+
+  // מחפשים את המשפט החמור ביותר שבו הפגיעה מכוונת ליהודים או ישראלים
+  let best = null;
+  for (const s of [a.title || "", ...splitSentences(body)]) {
+    const sev = sentenceSeverity(s);
+    if (sev && (!best || sev > best.sev)) best = { s, sev };
+  }
+  const target = RX.target.test(text);
+  const recent = RX.recent.test(text);
+
+  let kind;
+  if (!target || RX.junkTitle.test(a.title || "") || (RX.military.test(text) && !RX.diaspora.test(text))) kind = "irrelevant";
+  else if (!best) kind = "background";
+  else if (RX.opinion.test(text)) kind = "background";
+  else if ((RX.trend.test(best.s) || RX.historical.test(text)) && !recent) kind = "old";
+  else kind = "incident";
+
+  // המיקום נקבע לפי המשפט שמתאר את האירוע ולפי הכותרת, לא לפי אזכור אקראי בכתבה
+  const countries = best ? [...new Set([...detectCountries(best.s), ...detectCountries(a.title || "")])] : [];
+  let where = "unknown";
+  if (dest) where = countries.includes(dest) ? "local" : (countries.length ? "elsewhere" : "unknown");
+
+  return { ...a, date, sev: best?.sev || 0, kind, where, countries, contentChecked: !!body, quote: best && best.s !== a.title ? best.s : (a.sentence || "") };
+}
+
+function dedupe(items) {
+  const seen = new Set();
+  return items.filter(a => {
+    const k = (a.title || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 70) || a.url;
+    if (seen.has(k) || seen.has(a.url)) return false;
+    seen.add(k); seen.add(a.url);
+    return true;
+  });
+}
+
+function category(item) {
+  if (item.kind === "old") return "old";
+  if (item.kind === "background") return "background";
+  if (item.where === "local") return ageDays(item.date) <= FRESH_DAYS ? "fresh_local" : "old_local";
+  return item.where; // elsewhere / unknown
+}
+const CAT_LABEL = {
+  fresh_local: "🔴 אירוע מקומי עדכני",
+  old_local: "🟠 אירוע מקומי – לא מ-3 הימים האחרונים",
+  old: "🟡 מעקב אחר אירוע ישן",
+  elsewhere: "🔵 אירוע במדינה אחרת",
+  unknown: "⚪ מיקום לא ודאי",
+  background: "⚪ רקע / דיון כללי"
+};
+const CAT_ORDER = ["fresh_local", "old_local", "unknown", "old", "elsewhere", "background"];
+
+async function newsForDestination(c) {
+  const ctxQ = buildQuery(c);
+  const docQ = buildQuery(c, " sourcelang:english");
+  const [ctx, doc, tl] = await Promise.allSettled([
+    gdelt(GDELT_CTX, { query: ctxQ, mode: "artlist", timespan: "72h", maxrecords: 100 }, 10),
+    gdelt(GDELT_DOC, { query: docQ, mode: "artlist", timespan: "7d", maxrecords: 75, sort: "datedesc" }, 10),
+    gdelt(GDELT_DOC, { query: docQ, mode: "timelinevolraw", timespan: "1month" }, 10)
+  ]);
+  if (ctx.status === "rejected" && doc.status === "rejected") throw ctx.reason;
+  const raw = [...(ctx.value?.articles || []), ...(doc.value?.articles || [])];
+  const analyzed = dedupe(raw).map(a => analyze(a, c));
+  const series = tl.status === "fulfilled" ? (tl.value.timeline?.[0]?.data || []) : null;
+  return { items: analyzed, series, partial: [ctx, doc, tl].some(p => p.status === "rejected") };
+}
+
+function trendFrom(series) {
+  if (!series || !series.length) return null;
+  const vals = series.map(p => p.value || 0);
+  const last7 = vals.slice(-7).reduce((s, v) => s + v, 0);
+  const prev = vals.slice(-28, -7);
+  const prevWeekly = prev.length ? prev.reduce((s, v) => s + v, 0) / (prev.length / 7) : 0;
+  const activeDays = vals.slice(-28).filter(v => v > 0).length;
+  let label, code;
+  if (last7 === 0 && prevWeekly === 0) { label = "אין סימן למגמה – כמעט ולא נמצאו דיווחים בחודש האחרון"; code = "none"; }
+  else if (last7 >= 5 && last7 >= prevWeekly * 1.5) { label = "📈 מגמה עולה – יותר דיווחים השבוע לעומת השבועות הקודמים"; code = "rising"; }
+  else if (activeDays >= 18) { label = "🔁 מגמה מתמשכת – דיווחים כמעט בכל יום בחודש האחרון"; code = "ongoing"; }
+  else if (prevWeekly > 0 && last7 <= prevWeekly * 0.6) { label = "📉 בירידה – פחות דיווחים השבוע"; code = "falling"; }
+  else { label = "➖ יציב – אין שינוי משמעותי"; code = "stable"; }
+  return { label, code, last7, prevWeekly: Math.round(prevWeekly), vals };
+}
+
+// גיבוי כשנתוני 30 הימים לא זמינים: פיזור האירועים המקומיים בין ימי השבוע האחרון
+function weekTrend(items) {
+  const local = items.filter(i => i.kind === "incident" && i.where === "local" && i.date);
+  const days = new Set(local.map(i => i.date.toISOString().slice(0, 10))).size;
+  if (!local.length) return { label: "לא נמצאו אירועים מקומיים בשבוע האחרון", code: "none" };
+  if (days >= 3) return { label: `🔁 מגמה מתמשכת – אירועים מקומיים ב-${days} ימים שונים בשבוע האחרון`, code: "ongoing" };
+  return { label: `נקודתי – ${local.length} דיווחים על אירועים מקומיים ב-${days} ${days === 1 ? "יום" : "ימים"}`, code: "stable" };
+}
+
+// ===================== זיהוי היעד =====================
+function findDestination(input) {
+  const base = norm(input);
+  const s1 = " " + base + " ";
+  const s2 = " " + base.split(" ").map(w => w.length > 3 && /^[לבו]/.test(w) ? w.slice(1) : w).join(" ") + " ";
+  const hit = name => { const n = " " + norm(name) + " "; return n.trim() && (s1.includes(n) || s2.includes(n)); };
+  if (hit("ישראל") || hit("israel")) return { israel: true };
+
+  let country = null, cLen = 0, capOf = null, kLen = 0;
+  for (const c of COUNTRIES) {
+    for (const n of [c.he, ...c.alt, c.en, c.us]) if (n && hit(n) && norm(n).length > cLen) { country = c; cLen = norm(n).length; }
+    for (const n of [c.capHe, c.cap]) if (n && hit(n) && norm(n).length > kLen) { capOf = c; kLen = norm(n).length; }
+  }
+  const notes = [];
+  if (!country && capOf) { country = capOf; notes.push(`זיהיתי את ${capOf.capHe} כבירת ${capOf.he}.`); }
+  else if (country && !capOf) notes.push(`לא צוינה עיר בירה – החיפוש כולל את הבירה ${country.capHe}.`);
+  else if (country && capOf && capOf !== country) notes.push(`שים לב: ${capOf.capHe} היא בירת ${capOf.he}, לא של ${country.he}. בירת ${country.he} היא ${country.capHe}.`);
+  return country ? { country, notes } : null;
+}
+
+// ===================== הצגת תוצאה ליעד =====================
+let currentSearch = 0;
+
+function line(icon, key, valueHtml, extraClass = "") {
+  return `<div class="line ${extraClass}"><div class="k">${icon} ${key}</div><div class="v">${valueHtml}</div></div>`;
+}
+
+function recommend(c, nsc, us, news) {
+  const reasons = [];
+  let base = nsc?.lvl?.level ?? null;
+  if (base && nsc.lvl.combined) reasons.push(`רמת האיום הרשמית של המל"ל באזור ${c.capHe}: ${base} – נקודת המוצא להמלצה. באזורים אחרים במדינה הרמה מגיעה עד ${nsc.lvl.max}, ראו הנחיות.`);
+  else if (base) reasons.push(`רמת האיום הרשמית של המל"ל: ${base} – נקודת המוצא להמלצה.`);
+  else if (us?.level) { base = Math.min(us.level, 4); reasons.push(`אין למל"ל רמת איום מפורשת ל${c.he} – נעשה שימוש זמני ברמה האמריקאית (${us.level}).`); }
+  else { base = 1; reasons.push(`לא נמצאה רמת איום רשמית ל${c.he}.`); }
+
+  let bump = 0, riskType = "אין אירועים מיוחדים בחדשות";
+  if (news) {
+    const local = news.items.filter(i => i.kind === "incident" && i.where === "local");
+    const fresh = local.filter(i => ageDays(i.date) <= FRESH_DAYS);
+    const freshScore = fresh.reduce((s, i) => s + i.sev, 0);
+    const old = news.items.filter(i => i.kind === "old" && (i.where === "local" || i.where === "unknown"));
+    const trend = trendFrom(news.series) || weekTrend(news.items);
+    if (fresh.some(i => i.sev === 3) || freshScore >= 5) {
+      bump = 1;
+      reasons.push(`זוהו ${fresh.length} דיווחים עדכניים (מ-${FRESH_DAYS} הימים האחרונים) על אירועים נגד יהודים או ישראלים ב${c.he}, חלקם חמורים – ההמלצה הועלתה בדרגה אחת.`);
+    } else if (fresh.length) reasons.push(`זוהו ${fresh.length} דיווחים עדכניים על אירועים מקומיים ברמת חומרה נמוכה-בינונית.`);
+    if (trend?.code === "rising" && local.length >= 2 && !bump) { bump = 1; reasons.push("כמות הדיווחים במגמת עלייה ויש אירועים מקומיים – ההמלצה הועלתה בדרגה אחת."); }
+    if (fresh.length) riskType = "סיכון מקומי עדכני";
+    else if (local.length) riskType = "אירועים מקומיים מהשבוע האחרון (לא מ-3 הימים האחרונים)";
+    else if (old.length) riskType = "אירועים ישנים בלבד (מעקב, משפטים, ימי שנה)";
+    if (trend && (trend.code === "rising" || trend.code === "ongoing")) riskType += " · " + (trend.code === "rising" ? "מגמה עולה" : "מגמה מתמשכת");
+    if (!local.length && !old.length) reasons.push("לא נמצאו בשבוע האחרון דיווחים על אירועים מקומיים נגד יהודים או ישראלים.");
+  } else reasons.push("דיווחי החדשות לא נטענו – ההמלצה מבוססת על האזהרות הרשמיות בלבד.");
+
+  if (us?.level && nsc?.lvl?.level && us.level >= nsc.lvl.level + 2)
+    reasons.push(`מחלקת המדינה האמריקאית מגדירה רמה ${us.level}, גבוהה משמעותית – מומלץ לקרוא את הפירוט שלה (מקור משלים, לא מחליף את המל"ל).`);
+  else if (us?.level) reasons.push(`מחלקת המדינה האמריקאית (מקור משלים): Level ${us.level}.`);
+
+  const level = Math.min(4, base + bump);
+  return { level, reasons, riskType };
+}
+
+function renderRecommendation(c, nsc, us, news, pending) {
+  if (pending) return line("⚖️", "המלצה על דרגת הסיכון", `<span class="spinner"></span> ממתין לניתוח דיווחי החדשות…`);
+  const r = recommend(c, nsc, us, news);
+  const tips = [];
+  if (r.level >= 2) tips.push('הימנעו מהצגה בולטת של סמלים ישראליים או יהודיים במרחב הציבורי.');
+  if (r.level >= 2) tips.push("הימנעו מהפגנות ומהתקהלויות, ואל תפרסמו ברשתות החברתיות את מיקומכם בזמן אמת.");
+  if (r.level >= 3) tips.push("שקלו לדחות את הנסיעה אם אינה חיונית.");
+  if (r.level >= 4) tips.push('המל"ל ממליץ להימנע מנסיעה ליעד זה. אם אתם כבר שם – פעלו לפי הנחיות המל"ל.');
+  return line("⚖️", "המלצה על דרגת הסיכון",
+    `<div class="big">${badge(r.level, LEVEL_INFO[r.level].rec)}</div>
+     <div style="margin-top:6px"><b>סוג הסיכון:</b> ${esc(r.riskType)}</div>
+     <ul>${r.reasons.map(x => `<li>${esc(x)}</li>`).join("")}${tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`,
+    "rec " + LEVEL_INFO[r.level].cls);
+}
+
+function renderMain(c, dest, nsc, us, news, pending) {
+  const w = warnings;
+  const nscLevel = !nsc?.lvl ? badge(0, "לא נמצאה רמה רשמית")
+    : nsc.lvl.combined
+      ? `${badge(nsc.lvl.level, LEVEL_INFO[nsc.lvl.level].nsc + " – באזור " + c.capHe)}
+         <div style="margin-top:6px">אזהרה משולבת: ${badge(nsc.lvl.max, LEVEL_INFO[nsc.lvl.max].nsc)} באזורים מסוימים במדינה – ראו פירוט בהנחיות.</div>`
+      : badge(nsc.lvl.level, LEVEL_INFO[nsc.lvl.level].nsc);
+  $("mainLines").innerHTML = [
+    line("🎯", "היעד", `<div class="big">${esc(c.he)}, ${esc(c.capHe)}</div><div class="note">${esc(c.en)} · ${esc(c.cap)}</div>${dest.notes.map(n => `<div class="note">${esc(n)}</div>`).join("")}`),
+    line("🏛️", 'הרמה הרשמית (המל"ל)', nscLevel),
+    line("📋", "הנחיות", nsc ? `<div class="pre">${esc(nsc.text)}</div>${nsc.link ? `<a href="${esc(nsc.link)}" target="_blank" rel="noopener">להמלצה המלאה באתר המל"ל ←</a>` : ""}` : `<span class="note">לא נמצאה אזהרה רשמית ל${esc(c.he)} במאגר.</span>`),
+    line("📅", "תאריך עדכון אחרון", `${fmtDate(w?.updated)} ${freshness(w?.updated)}<div class="note">תאריך העדכון האחרון של מאגר אזהרות המסע הממשלתי ב-data.gov.il. ההמלצה באתר המל"ל עשויה להיות חדשה יותר.</div>`),
+    renderRecommendation(c, nsc, us, news, pending)
+  ].join("");
+}
+
+function renderDetails(c, mfa, us, news, newsError) {
+  const parts = [];
+  parts.push(line("🇮🇱", "משרד החוץ", mfa && mfa.text
+    ? `<div class="pre">${esc(mfa.text)}</div>${mfa.link ? `<a href="${esc(mfa.link)}" target="_blank" rel="noopener">לפרטים באתר משרד החוץ ←</a>` : ""}`
+    : `<span class="note">אין הודעה מיוחדת של משרד החוץ ליעד זה.</span>`));
+
+  if (us) {
+    parts.push(line("🇺🇸", "מחלקת המדינה האמריקאית (מקור משלים)",
+      `${us.level ? badge(us.level, US_LABELS[us.level]) : esc(us.title)}
+       <div style="margin-top:6px">עודכן: ${fmtDate(us.updatedDate, false)} ${freshness(us.updatedDate)}</div>
+       <details style="margin-top:6px"><summary>תקציר האזהרה (באנגלית)</summary><p dir="ltr" style="text-align:left">${esc(us.summary)}</p></details>
+       <a href="${esc(us.link)}" target="_blank" rel="noopener">לאזהרה המלאה ←</a>`));
+  } else {
+    parts.push(line("🇺🇸", "מחלקת המדינה האמריקאית (מקור משלים)", `<span class="note">${usData ? "אין אזהרה אמריקאית ליעד זה." : "הנתונים לא זמינים כרגע."}</span>`));
+  }
+
+  if (newsError) {
+    parts.push(line("📰", "דיווחי חדשות", `<span class="stale">לא ניתן לטעון דיווחים: ${esc(newsError)}</span>`));
+  } else if (!news) {
+    parts.push(line("📰", "דיווחי חדשות", `<span class="spinner"></span> מחפש ומנתח דיווחים מהשבוע האחרון…`));
+  } else {
+    const shown = news.items.filter(i => i.kind !== "irrelevant");
+    const filtered = news.items.length - shown.length;
+    const counts = {};
+    shown.forEach(i => { const k = category(i); counts[k] = (counts[k] || 0) + 1; });
+    shown.sort((a, b) => CAT_ORDER.indexOf(category(a)) - CAT_ORDER.indexOf(category(b)) || b.date - a.date);
+    const summary = CAT_ORDER.filter(k => counts[k]).map(k => `${CAT_LABEL[k]}: ${counts[k]}`).join(" · ") || "לא נמצאו דיווחים רלוונטיים";
+    const list = shown.slice(0, 15).map(i => {
+      const cat = category(i);
+      return `<li>
+        <span class="tag ${cat}">${CAT_LABEL[cat]}</span>
+        <a href="${esc(i.url)}" target="_blank" rel="noopener" dir="auto">${esc(i.title)}</a>
+        <div class="meta">${esc(i.domain || "")} · דווח ב-${fmtDate(i.date)} ${ageDays(i.date) > FRESH_DAYS ? freshness(i.date) : ""}
+          ${i.contentChecked ? " · נבדק תוכן הכתבה" : " · נבדקה הכותרת בלבד"}</div>
+        ${i.quote ? `<div class="quote" dir="ltr" style="text-align:left">${esc(i.quote.slice(0, 320))}</div>` : ""}
+      </li>`;
+    }).join("");
+    parts.push(line("📰", "דיווחי חדשות (GDELT)",
+      `<div>${esc(summary)}</div>
+       <div class="note">${filtered} ידיעות סוננו כלא רלוונטיות (למשל דיווחים על פעילות צבאית, פוליטיקה, או שאינן עוסקות בפגיעה ביהודים וישראלים).${news.partial ? " חלק מהבקשות ל-GDELT נכשלו – התוצאות חלקיות." : ""}</div>
+       ${list ? `<ul class="news">${list}</ul>` : ""}`));
+
+    const t = trendFrom(news.series);
+    parts.push(line("📈", "מגמה (30 יום)", t
+      ? `<div><b>${esc(t.label)}</b></div>
+         <div class="note">דיווחים בשבוע האחרון: ${t.last7} · ממוצע שבועי קודם: ${t.prevWeekly} (כמות כל הכתבות התואמות לחיפוש, לפני סינון תוכן)</div>
+         <div class="spark" aria-label="כמות דיווחים יומית ב-30 הימים האחרונים">${(() => { const max = Math.max(1, ...t.vals); return t.vals.map((v, k) => `<span class="${k >= t.vals.length - 7 ? "recent" : ""}" style="height:${Math.round(v / max * 100)}%" title="${v}"></span>`).join(""); })()}</div>`
+      : `<div><b>${esc(weekTrend(news.items).label)}</b></div><div class="note">נתוני 30 הימים מ-GDELT לא זמינים כרגע – המגמה חושבה לפי דיווחי השבוע האחרון בלבד.</div>`));
+  }
+  $("detailLines").innerHTML = parts.join("");
+}
+
+$("searchForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const input = $("dest").value.trim();
+  if (!input) return;
+  const dest = findDestination(input);
+  if (!dest) { $("result").hidden = true; showMsg(`לא זיהיתי מדינה בטקסט "${input}". כתוב את שם המדינה ואת עיר הבירה, למשל: "יוון, אתונה".`, "error"); return; }
+  if (dest.israel) { $("result").hidden = true; showMsg("הכלי מיועד ליעדים מחוץ לישראל. כתוב שם של מדינה אחרת ועיר הבירה שלה.", "warn"); return; }
+
+  const c = dest.country;
+  const id = ++currentSearch;
+  $("goBtn").disabled = true;
+  showMsg("טוען אזהרות מסע רשמיות…");
+  try { await loadWarnings(); } catch (err) { setSource("nsc", "err", err.message); setSource("mfa", "err", err.message); }
+  try { await loadUS(); } catch (err) { setSource("us", "err", err.message); }
+  if (id !== currentSearch) return;
+
+  const nsc = warnings ? warningFor(warnings.nsc, c) : null;
+  const mfa = warnings ? warningFor(warnings.mfa, c) : null;
+  const us = usFor(c);
+  hideMsg();
+  if (!warnings) showMsg("לא הצלחתי לטעון את האזהרות הרשמיות מ-data.gov.il. נסה לרענן את הדף.", "error");
+  renderMain(c, dest, nsc, us, null, true);
+  renderDetails(c, mfa, us, null, null);
+  $("result").hidden = false;
+  $("goBtn").disabled = false;
+
+  let news = null, newsError = null;
+  try { news = await newsForDestination(c); setSource("gdelt", "ok", "פעיל"); }
+  catch (err) { newsError = err.message; setSource("gdelt", "err", err.message); }
+  if (id !== currentSearch) return;
+  renderMain(c, dest, nsc, us, news, false);
+  renderDetails(c, mfa, us, news, newsError);
+});
+
+// ===================== טבלה שבועית =====================
+let weeklyLoading = false;
+
+async function computeWeekly() {
+  const q = `${TARGET_Q} (attack OR attacked OR assault OR stabbed OR shooting OR arson OR vandalized OR threatened OR terror)`;
+  const [ctx, doc] = await Promise.allSettled([
+    gdelt(GDELT_CTX, { query: q, mode: "artlist", timespan: "72h", maxrecords: 200 }, 0),
+    gdelt(GDELT_DOC, { query: q + " sourcelang:english", mode: "artlist", timespan: "7d", maxrecords: 250, sort: "datedesc" }, 0)
+  ]);
+  if (ctx.status === "rejected" && doc.status === "rejected") throw ctx.reason;
+  const items = dedupe([...(ctx.value?.articles || []), ...(doc.value?.articles || [])]).map(a => analyze(a, null));
+
+  const stats = new Map();
+  for (const i of items) {
+    if (!(i.kind === "incident" || i.kind === "old") || !i.countries.length || !i.date) continue;
+    const c = i.countries[0];
+    if (!stats.has(c.he)) stats.set(c.he, { news: 0, fresh: 0, older: 0, days: new Set(), latest: null });
+    const s = stats.get(c.he);
+    const fresh = ageDays(i.date) <= FRESH_DAYS;
+    s.news += i.kind === "old" ? i.sev * 0.2 : i.sev * (fresh ? 1 : 0.6);
+    if (i.kind === "incident") { fresh ? s.fresh++ : s.older++; s.days.add(i.date.toISOString().slice(0, 10)); }
+    if (i.kind === "incident" && (!s.latest || i.date > new Date(s.latest.date))) s.latest = { title: i.title, url: i.url, date: i.date.toISOString(), domain: i.domain };
+  }
+
+  const rows = [], officialHigh = [];
+  for (const c of COUNTRIES) {
+    const nsc = warnings ? warningFor(warnings.nsc, c) : null;
+    const nscLevel = nsc?.lvl?.level || null;
+    if (nscLevel === 4) officialHigh.push(c.he);
+    const s = stats.get(c.he);
+    if (!s || !(s.fresh + s.older)) continue;
+    const news = Math.min(s.news, 12);
+    const us = usFor(c);
+    rows.push({
+      he: c.he, nscLevel, nscLabel: nsc?.lvl?.label || null, usLevel: us?.level || null,
+      fresh: s?.fresh || 0, older: s?.older || 0, days: s ? s.days.size : 0, latest: s?.latest || null,
+      score: Math.round(((nscLevel || 1) * 2 + news) * 10) / 10
+    });
+  }
+  rows.sort((a, b) => b.score - a.score);
+  return { rows: rows.slice(0, 15), officialHigh, at: new Date().toISOString(), analyzed: items.length };
+}
+
+function threatNature(r) {
+  if (r.days >= 3) return "🔁 מגמה מתמשכת – אירועים בכמה ימים שונים";
+  if (r.fresh >= 2 && r.fresh > r.older) return "📈 מתגבר – אירועים עדכניים";
+  if (r.fresh) return "🔴 סיכון מקומי עדכני";
+  return "🟠 אירוע מתחילת השבוע (לא מ-3 הימים האחרונים)";
+}
+
+function renderWeekly(data, fromCache) {
+  const tb = $("weeklyTable").querySelector("tbody");
+  tb.innerHTML = data.rows.map((r, k) => {
+    const latest = r.latest ? new Date(r.latest.date) : null;
+    return `<tr>
+      <td class="num">${k + 1}</td>
+      <td><b>${esc(r.he)}</b></td>
+      <td>${r.nscLevel ? badge(r.nscLevel, r.nscLabel) : '<span class="note">—</span>'}</td>
+      <td>${r.usLevel ? badge(r.usLevel, "Level " + r.usLevel) : '<span class="note">—</span>'}</td>
+      <td>${r.fresh + r.older ? `${r.fresh + r.older}<div class="note">${r.fresh} עדכניים · ${r.older} ישנים יותר</div>` : "0"}</td>
+      <td>${r.latest ? `<a href="${esc(r.latest.url)}" target="_blank" rel="noopener" dir="auto">${esc(r.latest.title.slice(0, 90))}</a><div class="note">${fmtDate(latest)} ${ageDays(latest) > FRESH_DAYS ? freshness(latest) : ""}</div>` : '<span class="note">—</span>'}</td>
+      <td>${esc(threatNature(r))}</td>
+      <td class="num">${r.score}</td>
+    </tr>`;
+  }).join("");
+  $("weeklyTable").hidden = !data.rows.length;
+  $("weeklyStatus").innerHTML = `עודכן לאחרונה: ${fmtDate(new Date(data.at))}${fromCache ? " (מהזיכרון המקומי)" : ""} · נותחו ${data.analyzed} ידיעות`
+    + (data.rows.length ? "" : " · לא זוהו השבוע אירועים מאומתים נגד יהודים או ישראלים מחוץ לישראל.");
+  $("weeklyOfficial").innerHTML = data.officialHigh?.length
+    ? `<b>מדינות ברמת איום 4 (גבוהה) לפי המל"ל, גם ללא אירועים בחדשות:</b> ${data.officialHigh.map(esc).join(" · ")}`
+    : "";
+}
+
+async function loadWeekly(force = false) {
+  if (weeklyLoading) return;
+  const cached = lsGet(WEEKLY_CACHE_KEY);
+  if (!force && cached && Date.now() - new Date(cached.at).getTime() < WEEKLY_CACHE_MS) { renderWeekly(cached, true); return; }
+  weeklyLoading = true;
+  $("refreshWeekly").disabled = true;
+  $("weeklyStatus").innerHTML = `<span class="spinner"></span> אוסף ומנתח דיווחים מהשבוע האחרון…`;
+  try {
+    try { await loadWarnings(); } catch (err) { setSource("nsc", "err", err.message); }
+    try { await loadUS(); } catch (err) { setSource("us", "err", err.message); }
+    const data = await computeWeekly();
+    setSource("gdelt", "ok", "פעיל");
+    lsSet(WEEKLY_CACHE_KEY, data);
+    renderWeekly(data, false);
+  } catch (err) {
+    setSource("gdelt", "err", err.message);
+    if (cached) { renderWeekly(cached, true); $("weeklyStatus").innerHTML += ` · <span class="stale">רענון נכשל: ${esc(err.message)}</span>`; }
+    else $("weeklyStatus").innerHTML = `<span class="stale">לא ניתן לטעון את הטבלה: ${esc(err.message)}</span>`;
+  } finally {
+    weeklyLoading = false;
+    $("refreshWeekly").disabled = false;
+  }
+}
+
+// ===================== מקורות =====================
+function renderSources() {
+  $("sources").innerHTML = SOURCES.map(s => {
+    if (!s.free) return `<div>⏭️ <b>${esc(s.name)}</b> – דולג: ${esc(s.why)}</div>`;
+    const st = sourceStatus[s.id];
+    const icon = !st ? "⏳" : st.state === "ok" ? "✅" : "⚠️";
+    return `<div>${icon} <b>${esc(s.name)}</b>${st ? " – " + esc(st.text) : " – ממתין"}</div>`;
+  }).join("");
+}
+
+$("refreshWeekly").addEventListener("click", () => loadWeekly(true));
+renderSources();
+loadWeekly();
+setInterval(() => loadWeekly(true), WEEKLY_REFRESH_MS);
+</script>
+</body>
+</html>
