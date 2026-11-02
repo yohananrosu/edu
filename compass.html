@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* One file, two roles: the computer shows the compass, the phone transmits its sensors */
+  :root {
+    --bg: #0d1117; --panel: #151b24; --line: #263041; --ink: #e8edf4; --muted: #8a96a8;
+    --north: #e5383b; --south: #2f6fde; --brass: #c9a227; --ok: #2fbf71; --warn: #e0a526; --bad: #ff6b6b;
+    --font: "Heebo", Arial, sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+  [hidden] { display: none !important; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  h2 { margin: 0 0 10px; font-size: 16px; font-weight: 600; color: var(--muted); }
+  kbd { font-family: var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; color: var(--ink); }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 14px; color: var(--muted); }
+  .pill.ok { color: var(--ok); border-color: var(--ok); }
+  .pill.warn { color: var(--warn); border-color: var(--warn); }
+  .switch { font-size: 13px; color: #7fb2ff; }
+
+  /* ---------- display (computer) ---------- */
+  #display header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+  }
+  #display h1 { margin: 0; font-size: 24px; font-weight: 800; flex: 1 1 auto; }
+  .hint { font-size: 14px; color: var(--muted); }
+  #display main {
+    display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px;
+    padding: 18px 16px; max-width: 1400px; margin: auto;
+  }
+  @media (max-width: 900px) { #display main { grid-template-columns: 1fr; } }
+  .compass-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  #compass { width: 100%; max-width: 640px; height: auto; display: block; }
+  .readout { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .readout .big { font-family: var(--mono); font-size: 56px; font-weight: 700; direction: ltr; }
+  .readout .dir { font-size: 28px; font-weight: 800; }
+  .readout .src { font-size: 14px; color: var(--muted); width: 100%; text-align: center; }
+  aside { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .grid2 { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 15px; }
+  .grid2 span:nth-child(odd) { color: var(--muted); }
+  .grid2 span:nth-child(even) { font-family: var(--mono); font-size: 19px; direction: ltr; text-align: left; }
+  .code b { font-family: var(--mono); font-size: 30px; letter-spacing: 4px; color: var(--brass); direction: ltr; display: inline-block; }
+  .pair-row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  #qr { background: #fff; padding: 8px; border-radius: 8px; line-height: 0; }
+  #qr:empty { display: none; }
+  .help { font-size: 14px; color: var(--muted); margin: 8px 0 0; line-height: 1.6; }
+  .help a { color: #7fb2ff; word-break: break-all; }
+  .fl { fill: none; stroke: rgba(201,162,39,.55); stroke-width: 1.4; stroke-dasharray: 5 7; animation: flow 1.2s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -12; } }
+  @media (prefers-reduced-motion: reduce) { .fl { animation: none; } }
+
+  /* ---------- phone ---------- */
+  #phone {
+    padding: max(16px, env(safe-area-inset-top)) 16px 24px;
+    display: flex; flex-direction: column; gap: 14px; max-width: 520px; margin: auto;
+  }
+  #phone h1 { margin: 0; font-size: 22px; font-weight: 800; }
+  #phone label { display: block; color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+  #phone input {
+    width: 100%; font-family: var(--mono); font-size: 28px; letter-spacing: 6px; text-align: center; direction: ltr;
+    background: #0f151f; color: var(--brass); border: 1px solid var(--line); border-radius: 10px; padding: 8px;
+  }
+  #phone button {
+    width: 100%; font: inherit; font-size: 20px; font-weight: 800; padding: 14px; border-radius: 12px; border: none;
+    background: var(--brass); color: #1a1405; cursor: pointer;
+  }
+  #phone button.dark { background: #2a3342; color: var(--ink); }
+  .status { font-size: 15px; line-height: 1.7; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  .live { display: flex; align-items: center; gap: 16px; }
+  #rose { width: 140px; height: 140px; flex: none; }
+  .ph { font-family: var(--mono); font-size: 48px; font-weight: 700; direction: ltr; text-align: right; }
+  .pd { font-size: 22px; font-weight: 800; }
+  .pt { font-size: 14px; color: var(--muted); font-family: var(--mono); direction: ltr; text-align: right; }
+  .tip { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 0; }
+
+  #ended {
+    position: fixed; inset: 0; background: rgba(13,17,23,.97); display: none; place-items: center;
+    font-size: 32px; font-weight: 800; text-align: center; z-index: 10; padding: 16px;
+  }
+  #ended.on { display: grid; }
+  #ended small { display: block; font-size: 16px; font-weight: 400; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ======================= DISPLAY (computer) ======================= -->
+<div id="display" hidden>
+  <header>
+    <h1>Compass · מצפן בזמן אמת</h1>
+    <span class="hint">יציאה: <kbd>Esc</kbd> במקלדת או <kbd>#</kbd> בטלפון</span>
+    <span id="pBroker" class="pill">שרת: מתחבר…</span>
+    <span id="pPhone" class="pill">טלפון: ממתין</span>
+  </header>
+  <main>
+    <section class="card compass-card">
+      <svg id="compass" viewBox="-230 -250 460 480" aria-label="מצפן">
+        <defs>
+          <radialGradient id="face" cx="0" cy="0" r="200" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#1b2433"/><stop offset="1" stop-color="#0f151f"/>
+          </radialGradient>
+          <linearGradient id="bezel" x1="0" y1="-210" x2="0" y2="210" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#e8c65a"/><stop offset=".5" stop-color="#8a6d18"/><stop offset="1" stop-color="#d9b445"/>
+          </linearGradient>
+          <linearGradient id="magN" x1="-14" x2="14" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#a61d20"/><stop offset=".45" stop-color="#ff5a5d"/><stop offset="1" stop-color="#a61d20"/>
+          </linearGradient>
+          <linearGradient id="magS" x1="-14" x2="14" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#173f8a"/><stop offset=".45" stop-color="#5b93f5"/><stop offset="1" stop-color="#173f8a"/>
+          </linearGradient>
+          <clipPath id="fieldClip"><circle r="132"/></clipPath>
+        </defs>
+        <circle r="212" fill="url(#bezel)"/>
+        <g id="dial">
+          <circle r="200" fill="url(#face)"/>
+          <g id="ticks"></g>
+          <g clip-path="url(#fieldClip)" id="field"></g>
+          <g id="magnet">
+            <rect x="-14" y="-122" width="28" height="122" rx="4" fill="url(#magN)"/>
+            <rect x="-14" y="0" width="28" height="122" rx="4" fill="url(#magS)"/>
+            <text x="0" y="-96" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="20" fill="#fff">N</text>
+            <text x="0" y="112" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="20" fill="#fff">S</text>
+            <circle r="9" fill="#c9a227" stroke="#5c4a10" stroke-width="2"/>
+          </g>
+        </g>
+        <polygon points="0,-206 -13,-232 13,-232" fill="#e8edf4"/>
+        <text x="0" y="-238" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">כיוון הטלפון</text>
+      </svg>
+      <div class="readout">
+        <div class="big"><span id="hdg">--</span>°</div>
+        <div class="dir" id="dirName">—</div>
+        <div class="src" id="src">מחכה לנתונים מהטלפון</div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h2>קואורדינטות המיקום</h2>
+        <div class="grid2">
+          <span>קו רוחב</span><span id="cLat">--</span>
+          <span>קו אורך</span><span id="cLon">--</span>
+          <span>דיוק</span><span id="cAcc">--</span>
+          <span>גובה</span><span id="cAlt">--</span>
+          <span>מהירות</span><span id="cSpd">--</span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>מצב הטלפון במרחב</h2>
+        <div class="grid2">
+          <span>כיוון</span><span id="vH">--</span>
+          <span>הטיה קדימה / אחורה (β)</span><span id="vB">--</span>
+          <span>הטיה ימינה / שמאלה (γ)</span><span id="vG">--</span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>חיבור הטלפון</h2>
+        <div class="pair-row">
+          <div id="qr"></div>
+          <div>
+            <div class="code">קוד חיבור: <b id="code"></b></div>
+            <p class="help" id="pairHelp"></p>
+          </div>
+        </div>
+      </div>
+      <a class="switch" href="?role=phone">מצב טלפון (משדר) ←</a>
+    </aside>
+  </main>
+</div>
+
+<!-- ======================= PHONE (transmitter) ======================= -->
+<div id="phone" hidden>
+  <h1>Compass · טלפון משדר</h1>
+  <div class="card">
+    <label for="pCode">קוד חיבור (מופיע במסך המחשב)</label>
+    <input id="pCode" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="000000">
+  </div>
+  <button id="start" type="button">התחל לשדר</button>
+  <div class="card status" id="status">לחץ על "התחל לשדר" ואשר גישה למיקום ולחיישני התנועה.</div>
+  <div class="card live">
+    <svg id="rose" viewBox="-70 -70 140 140" aria-label="מצפן בטלפון">
+      <circle r="66" fill="#0f151f" stroke="#c9a227" stroke-width="3"/>
+      <g id="roseDial">
+        <text x="0" y="-44" text-anchor="middle" font-family="Heebo, Arial" font-weight="800" font-size="16" fill="#e5383b">צ</text>
+        <text x="48" y="6" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">מז</text>
+        <text x="0" y="56" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">ד</text>
+        <text x="-48" y="6" text-anchor="middle" font-family="Heebo, Arial" font-size="13" fill="#8a96a8">מע</text>
+        <polygon points="0,-36 -7,0 7,0" fill="#e5383b"/>
+        <polygon points="0,36 -7,0 7,0" fill="#2f6fde"/>
+      </g>
+      <polygon points="0,-68 -6,-58 6,-58" fill="#e8edf4"/>
+    </svg>
+    <div>
+      <div class="ph"><span id="phHdg">---</span>°</div>
+      <div class="pd" id="phDir">—</div>
+      <div class="pt" id="phGps">מיקום: --</div>
+    </div>
+  </div>
+  <div class="card">
+    <label for="quitKey">יציאה מהתכנית: הקש # במקלדת הטלפון</label>
+    <input id="quitKey" inputmode="tel" autocomplete="off" placeholder="#">
+    <button id="quit" type="button" class="dark" style="margin-top:10px">#  סיום התכנית</button>
+  </div>
+  <p class="tip">החזק את הטלפון שטוח ומקביל לרצפה, והרחק אותו ממגנטים ומתכת. אם הכיוון שגוי, צייר באוויר את הספרה 8 עם הטלפון כדי לכייל את המצפן.</p>
+  <a class="switch" href="?role=display">מצב תצוגה (מחשב) ←</a>
+</div>
+
+<div id="ended" role="alert"><div>התכנית הסתיימה<small id="endedWhy"></small></div></div>
+
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const BROKER = "wss://broker.hivemq.com:8884/mqtt";
+const PREFIX = "edu-compass-v1/";
+const DIRS = ["צפון", "צפון-מזרח", "מזרח", "דרום-מזרח", "דרום", "דרום-מערב", "מערב", "צפון-מערב"];
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+
+// ?role=phone / ?role=display wins; otherwise a mobile browser is the transmitter
+const ROLE = params.get("role") || (/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) ? "phone" : "display");
+
+let ended = false;
+function showEnded(why) {
+  ended = true;
+  $("endedWhy").textContent = why;
+  $("ended").classList.add("on");
+  setTimeout(() => window.close(), 400);   // browsers only allow this for some windows; the overlay stays otherwise
+}
+function dirName(h) { return DIRS[Math.round(h / 45) % 8]; }
+
+if (ROLE === "phone") runPhone(); else runDisplay();
+
+// =====================================================================
+function runDisplay() {
+  $("display").hidden = false;
+  const SVGNS = "http://www.w3.org/2000/svg";
+  function svg(tag, attrs, parent) {
+    const el = document.createElementNS(SVGNS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    parent.appendChild(el);
+    return el;
+  }
+
+  // dial: ticks, Hebrew cardinal letters, field lines
+  const ticks = $("ticks");
+  for (let d = 0; d < 360; d += 5) {
+    const long = d % 30 === 0, mid = d % 10 === 0;
+    const r2 = long ? 166 : mid ? 174 : 180;
+    const a = (d - 90) * Math.PI / 180;
+    svg("line", {
+      x1: 188 * Math.cos(a), y1: 188 * Math.sin(a), x2: r2 * Math.cos(a), y2: r2 * Math.sin(a),
+      stroke: long ? "#e8edf4" : "#5d6a7e", "stroke-width": long ? 2.5 : 1.2
+    }, ticks);
+  }
+  const card = { 0: ["צ", "#e5383b"], 90: ["מז", "#e8edf4"], 180: ["ד", "#e8edf4"], 270: ["מע", "#e8edf4"] };
+  for (let d = 0; d < 360; d += 30) {
+    const g = svg("g", { transform: `rotate(${d})` }, ticks);
+    const t = card[d]
+      ? svg("text", { x: 0, y: -140, "text-anchor": "middle", "font-family": "Heebo, Arial", "font-weight": 800, "font-size": 26, fill: card[d][1] }, g)
+      : svg("text", { x: 0, y: -146, "text-anchor": "middle", "font-family": "JetBrains Mono, monospace", "font-size": 13, fill: "#8a96a8" }, g);
+    t.textContent = card[d] ? card[d][0] : d;
+  }
+  for (const k of [45, 80, 120, 170]) {
+    for (const s of [1, -1]) svg("path", { class: "fl", d: `M0,-118 C${s * k},-230 ${s * k},230 0,118` }, $("field"));
+  }
+
+  // smooth animation toward the latest reading
+  const target = { h: 0, b: 0, g: 0 }, cur = { h: 0, b: 0, g: 0 };
+  let lastMsg = 0, haveData = false;
+  const shortest = (from, to) => ((to - from + 540) % 360) - 180;
+  const fmt = n => (Math.round(n * 10) / 10).toFixed(1);
+  function frame() {
+    cur.h = (cur.h + shortest(cur.h, target.h) * 0.15 + 360) % 360;
+    cur.b += (target.b - cur.b) * 0.15;
+    cur.g += (target.g - cur.g) * 0.15;
+    $("dial").setAttribute("transform", `rotate(${-cur.h})`);
+    if (haveData) {
+      $("hdg").textContent = Math.round(cur.h).toString().padStart(3, "0");
+      $("dirName").textContent = dirName(cur.h);
+      $("vH").textContent = fmt(cur.h) + "°";
+      $("vB").textContent = fmt(cur.b) + "°";
+      $("vG").textContent = fmt(cur.g) + "°";
+    }
+    if (!ended) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // coordinates
+  function dms(v, pos, neg) {
+    const a = Math.abs(v), d = Math.floor(a), mf = (a - d) * 60, m = Math.floor(mf), s = (mf - m) * 60;
+    return `${v.toFixed(6)}°  ${d}°${String(m).padStart(2, "0")}'${s.toFixed(1).padStart(4, "0")}"${v >= 0 ? pos : neg}`;
+  }
+  function showPos(p) {
+    if (typeof p.lat !== "number" || typeof p.lon !== "number") return;
+    $("cLat").textContent = dms(p.lat, "N", "S");
+    $("cLon").textContent = dms(p.lon, "E", "W");
+    $("cAcc").textContent = typeof p.acc === "number" ? `±${p.acc} m` : "--";
+    $("cAlt").textContent = typeof p.alt === "number" ? `${p.alt} m` : "--";
+    $("cSpd").textContent = typeof p.spd === "number" ? `${(p.spd * 3.6).toFixed(1)} km/h` : "--";
+  }
+
+  // pairing code + QR pointing at this same file in phone mode
+  let code = null;
+  try { code = localStorage.getItem("compass-code"); } catch (e) {}
+  if (!/^\d{6}$/.test(code || "")) code = String(Math.floor(100000 + Math.random() * 900000));
+  try { localStorage.setItem("compass-code", code); } catch (e) {}
+  $("code").textContent = code;
+  if (location.protocol === "https:" || location.protocol === "http:") {
+    const url = new URL(location.href);
+    url.search = "";
+    url.searchParams.set("role", "phone");
+    url.searchParams.set("code", code);
+    if (window.QRCode) new QRCode($("qr"), { text: url.href, width: 132, height: 132 });
+    const a = document.createElement("a"); a.href = url.href; a.textContent = url.href; a.target = "_blank";
+    $("pairHelp").append("סרוק את הקוד במצלמת הטלפון, או פתח בטלפון: ", a);
+  } else {
+    $("pairHelp").textContent = "הקובץ נפתח מהמחשב. בטלפון פתח את אותו קובץ מכתובת https והקלד את הקוד.";
+  }
+
+  // MQTT
+  const setPill = (id, text, cls) => { $(id).textContent = text; $(id).className = "pill" + (cls ? " " + cls : ""); };
+  const topic = PREFIX + code;
+  let client = null;
+  if (!window.mqtt) setPill("pBroker", "שרת: הספרייה לא נטענה — בדוק חיבור לאינטרנט", "warn");
+  else {
+    client = mqtt.connect(BROKER, { clientId: "cmpd_" + Math.random().toString(16).slice(2, 10), reconnectPeriod: 2000, connectTimeout: 8000 });
+    client.on("connect", () => { setPill("pBroker", "שרת: מחובר", "ok"); client.subscribe(topic); });
+    client.on("reconnect", () => setPill("pBroker", "שרת: מתחבר מחדש…", "warn"));
+    client.on("offline", () => setPill("pBroker", "שרת: מנותק", "warn"));
+    client.on("message", (t, payload) => {
+      if (t !== topic || ended) return;
+      let m;
+      try { m = JSON.parse(payload.toString()); } catch (e) { return; }
+      if (m.cmd === "quit") { quit("נלחץ # בטלפון"); return; }
+      if (m.pos) showPos(m.pos);
+      if (typeof m.h !== "number" || !isFinite(m.h)) return;
+      target.h = ((m.h % 360) + 360) % 360;
+      if (typeof m.b === "number" && isFinite(m.b)) target.b = Math.max(-180, Math.min(180, m.b));
+      if (typeof m.g === "number" && isFinite(m.g)) target.g = Math.max(-90, Math.min(90, m.g));
+      lastMsg = Date.now();
+      haveData = true;
+      $("src").textContent = m.abs ? "כיוון ביחס לצפון המגנטי, נמדד במצפן הטלפון" : "שים לב: הדפדפן בטלפון מוסר כיוון יחסי בלבד, לא ביחס לצפון";
+    });
+  }
+  setInterval(() => {
+    if (ended) return;
+    if (Date.now() - lastMsg < 2500) setPill("pPhone", "טלפון: משדר", "ok");
+    else setPill("pPhone", lastMsg ? "טלפון: הפסיק לשדר" : "טלפון: ממתין", lastMsg ? "warn" : "");
+  }, 500);
+
+  function quit(why) {
+    if (ended) return;
+    if (client) { client.end(true); client = null; }
+    showEnded(why);
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") quit("נלחץ Esc"); });
+}
+
+// =====================================================================
+function runPhone() {
+  $("phone").hidden = false;
+  const SEND_EVERY_MS = 50;
+  let saved = "";
+  try { saved = localStorage.getItem("compass-phone-code") || ""; } catch (e) {}
+  $("pCode").value = (params.get("code") || saved).replace(/\D/g, "").slice(0, 6);
+
+  let running = false, client = null, topic = null, lastSend = 0, sent = 0, lastSent = 0, lastEvent = 0;
+  let wakeLock = null, eventName = null, geoWatch = null, reading = null, pos = null;
+
+  function setStatus(lines) {
+    $("status").innerHTML = "";
+    for (const [cls, text] of lines) {
+      const div = document.createElement("div");
+      if (cls) div.className = cls;
+      div.textContent = text;
+      $("status").appendChild(div);
+    }
+  }
+
+  function send(obj) {
+    if (client && client.connected) client.publish(topic, JSON.stringify(obj));
+  }
+
+  function onOrientation(e) {
+    let h = null, abs = false;
+    if (typeof e.webkitCompassHeading === "number" && !isNaN(e.webkitCompassHeading)) {
+      h = e.webkitCompassHeading; abs = true;          // iPhone: degrees from magnetic north
+    } else if (e.alpha != null) {
+      h = (360 - e.alpha) % 360;                         // Android: alpha counts counter-clockwise
+      abs = e.absolute === true || e.type === "deviceorientationabsolute";
+    }
+    if (h == null) return;
+    const now = Date.now();
+    lastEvent = now;
+    reading = { h, b: e.beta || 0, g: e.gamma || 0, abs };
+    if (now - lastSend >= SEND_EVERY_MS) {
+      lastSend = now; sent++;
+      send({ h: Math.round(h * 10) / 10, b: Math.round(reading.b * 10) / 10, g: Math.round(reading.g * 10) / 10, abs, pos, t: now });
+    }
+  }
+
+  function onPosition(p) {
+    const c = p.coords;
+    pos = {
+      lat: Math.round(c.latitude * 1e6) / 1e6, lon: Math.round(c.longitude * 1e6) / 1e6,
+      acc: Math.round(c.accuracy), alt: c.altitude == null ? null : Math.round(c.altitude),
+      spd: c.speed == null ? null : Math.round(c.speed * 10) / 10
+    };
+    $("phGps").textContent = `${pos.lat.toFixed(6)}, ${pos.lon.toFixed(6)} (±${pos.acc}m)`;
+  }
+
+  function draw() {
+    if (reading) {
+      $("roseDial").setAttribute("transform", `rotate(${-reading.h})`);
+      $("phHdg").textContent = Math.round(reading.h).toString().padStart(3, "0");
+      $("phDir").textContent = dirName(reading.h);
+    }
+    if (!ended) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  setInterval(() => {
+    if (!running) return;
+    const rate = sent - lastSent; lastSent = sent;
+    const lines = [];
+    lines.push(client && client.connected ? ["ok", `מחובר לשרת · קוד ${$("pCode").value}`] : ["warn", "מתחבר לשרת…"]);
+    if (!lastEvent) lines.push(["warn", "ממתין לנתונים מהחיישן…"]);
+    else if (Date.now() - lastEvent > 3000) lines.push(["bad", "החיישן הפסיק לשלוח נתונים."]);
+    else lines.push(["ok", `שולח ${rate} עדכונים בשנייה`]);
+    if (!pos) lines.push(["warn", "ממתין למיקום GPS…"]);
+    if (reading && !reading.abs) lines.push(["warn", "הדפדפן מוסר כיוון יחסי בלבד. נסה Chrome."]);
+    setStatus(lines);
+  }, 1000);
+
+  async function start() {
+    const code = $("pCode").value.replace(/\D/g, "");
+    if (code.length !== 6) { setStatus([["bad", "הקלד את הקוד בן 6 הספרות שמופיע במסך המחשב."]]); return; }
+    if (!window.isSecureContext) { setStatus([["bad", "הדפדפן מאפשר גישה למצפן ול-GPS רק בכתובת שמתחילה ב-https."]]); return; }
+    if (typeof DeviceOrientationEvent === "undefined") { setStatus([["bad", "הדפדפן הזה לא תומך בחיישני כיוון."]]); return; }
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      try {
+        if (await DeviceOrientationEvent.requestPermission() !== "granted") { setStatus([["bad", "לא ניתנה גישה לחיישני התנועה."]]); return; }
+      } catch (e) { setStatus([["bad", "בקשת ההרשאה נכשלה: " + e.message]]); return; }
+    }
+    if (!window.mqtt) { setStatus([["bad", "ספריית החיבור לא נטענה. בדוק את חיבור האינטרנט ורענן את הדף."]]); return; }
+
+    try { localStorage.setItem("compass-phone-code", code); } catch (e) {}
+    topic = PREFIX + code;
+    eventName = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+    window.addEventListener(eventName, onOrientation);
+    if ("geolocation" in navigator) {
+      geoWatch = navigator.geolocation.watchPosition(onPosition,
+        err => { $("phGps").textContent = "מיקום: אין גישה ל-GPS (" + err.message + ")"; },
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+    }
+    client = mqtt.connect(BROKER, { clientId: "cmpp_" + Math.random().toString(16).slice(2, 10), reconnectPeriod: 2000, connectTimeout: 8000 });
+    try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+
+    running = true; sent = 0; lastSent = 0; lastEvent = 0;
+    $("start").textContent = "עצור שידור";
+    $("start").classList.add("dark");
+    $("pCode").disabled = true;
+  }
+
+  function stop() {
+    running = false;
+    if (eventName) window.removeEventListener(eventName, onOrientation);
+    if (geoWatch != null) { navigator.geolocation.clearWatch(geoWatch); geoWatch = null; }
+    if (client) { client.end(); client = null; }
+    if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+    $("start").textContent = "התחל לשדר";
+    $("start").classList.remove("dark");
+    $("pCode").disabled = false;
+    setStatus([["", "השידור נעצר."]]);
+  }
+
+  // "#" on the phone keypad ends the program on both sides
+  function quitProgram() {
+    if (ended) return;
+    send({ cmd: "quit", t: Date.now() });
+    setTimeout(() => { if (running) stop(); showEnded("נלחץ # בטלפון"); }, 300);
+  }
+
+  $("start").addEventListener("click", () => running ? stop() : start());
+  $("quitKey").addEventListener("input", e => { if (e.target.value.includes("#")) { e.target.value = ""; quitProgram(); } });
+  $("quit").addEventListener("click", quitProgram);
+  document.addEventListener("keydown", e => { if (e.key === "#" && e.target !== $("quitKey")) quitProgram(); });
+  document.addEventListener("visibilitychange", async () => {
+    if (running && document.visibilityState === "visible" && "wakeLock" in navigator) {
+      try { wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+    }
+  });
+}
+</script>
+</body>
+</html>
