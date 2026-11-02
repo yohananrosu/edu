@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>חיישן המצפן</title>
+<title>Compass · טלפון</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -74,6 +74,16 @@
     </div>
   </div>
 
+  <div class="card">
+    <div class="nums"><div class="t" id="gps">מיקום: --</div></div>
+  </div>
+
+  <div class="card">
+    <label for="quitKey">יציאה מהתכנית: הקש # במקלדת הטלפון</label>
+    <input id="quitKey" inputmode="tel" autocomplete="off" placeholder="#">
+    <button id="quit" type="button" class="stop" style="margin-top:10px">#  סיום התכנית</button>
+  </div>
+
   <p class="tip">החזק את הטלפון שטוח ומקביל לרצפה לקבלת כיוון מדויק, והרחק אותו ממגנטים ומחפצי מתכת גדולים. אם הכיוון נראה שגוי, צייר באוויר כמה פעמים את הספרה 8 עם הטלפון כדי לכייל את המצפן.</p>
 
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
@@ -92,6 +102,7 @@ $("code").value = (params.get("code") || saved).replace(/\D/g, "").slice(0, 6);
 let running = false, client = null, topic = null, lastSend = 0, sent = 0, lastEvent = 0, wakeLock = null;
 let reading = null;
 let eventName = null;
+let pos = null, geoWatch = null;
 
 function setStatus(lines) {
   $("status").innerHTML = "";
@@ -120,10 +131,31 @@ function onOrientation(e) {
     lastSend = now; sent++;
     client.publish(topic, JSON.stringify({
       h: Math.round(reading.h * 10) / 10, b: Math.round(reading.b * 10) / 10, g: Math.round(reading.g * 10) / 10,
-      abs: reading.abs, acc: reading.acc, t: now
+      abs: reading.abs, acc: reading.acc, pos, t: now
     }));
   }
 }
+
+function onPosition(p) {
+  const c = p.coords;
+  pos = {
+    lat: Math.round(c.latitude * 1e6) / 1e6, lon: Math.round(c.longitude * 1e6) / 1e6,
+    acc: Math.round(c.accuracy), alt: c.altitude == null ? null : Math.round(c.altitude),
+    spd: c.speed == null ? null : Math.round(c.speed * 10) / 10
+  };
+  $("gps").textContent = `${pos.lat.toFixed(6)}, ${pos.lon.toFixed(6)} (±${pos.acc}m)`;
+}
+
+// "#" from the phone keypad (or the button) ends the program on the display too
+function quitProgram() {
+  if (client && client.connected) client.publish(topic, JSON.stringify({ cmd: "quit", t: Date.now() }));
+  setTimeout(() => { if (running) stop(); setStatus([["", "התכנית הסתיימה (#)."]]); }, 300);
+}
+$("quitKey").addEventListener("input", e => {
+  if (e.target.value.includes("#")) { e.target.value = ""; quitProgram(); }
+});
+$("quit").addEventListener("click", quitProgram);
+document.addEventListener("keydown", e => { if (e.key === "#" && e.target !== $("quitKey")) quitProgram(); });
 
 function draw() {
   if (reading) {
@@ -170,6 +202,11 @@ async function start() {
   topic = PREFIX + code;
   eventName = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
   window.addEventListener(eventName, onOrientation);
+  if ("geolocation" in navigator) {
+    geoWatch = navigator.geolocation.watchPosition(onPosition,
+      err => { $("gps").textContent = "מיקום: אין גישה ל-GPS (" + err.message + ")"; },
+      { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 });
+  }
 
   if (window.mqtt) {
     client = mqtt.connect(BROKER, { clientId: "cmpp_" + Math.random().toString(16).slice(2, 10), reconnectPeriod: 2000, connectTimeout: 8000 });
@@ -191,6 +228,7 @@ async function start() {
 function stop() {
   running = false;
   if (eventName) window.removeEventListener(eventName, onOrientation);
+  if (geoWatch != null) { navigator.geolocation.clearWatch(geoWatch); geoWatch = null; }
   if (client) { client.end(true); client = null; }
   if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
   $("start").textContent = "התחל לשדר";

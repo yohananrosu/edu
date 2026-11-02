@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>מצפן מרחוק</title>
+<title>Compass</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -99,11 +99,23 @@
   .fl { fill: none; stroke: rgba(201,162,39,.55); stroke-width: 1.4; stroke-dasharray: 5 7; animation: flow 1.2s linear infinite; }
   @keyframes flow { to { stroke-dashoffset: -12; } }
   @media (prefers-reduced-motion: reduce) { .fl { animation: none; } }
+  .coords { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 15px; }
+  .coords span:nth-child(odd) { color: var(--muted); }
+  .coords span:nth-child(even) { font-family: var(--mono); font-size: 20px; direction: ltr; text-align: left; }
+  .exit-hint { font-size: 13px; color: var(--muted); }
+  .exit-hint kbd { font-family: var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 0 6px; color: var(--ink); }
+  #ended {
+    position: fixed; inset: 0; background: rgba(13,17,23,.96); display: none; place-items: center;
+    font-size: 32px; font-weight: 800; text-align: center; z-index: 10;
+  }
+  #ended.on { display: grid; }
+  #ended small { display: block; font-size: 16px; font-weight: 400; color: var(--muted); margin-top: 8px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>מצפן מרחוק</h1>
+  <h1>Compass · מצפן בזמן אמת</h1>
+  <span class="exit-hint">יציאה: <kbd>Esc</kbd> במקלדת או <kbd>#</kbd> בטלפון</span>
   <div class="pills">
     <span id="pBroker" class="pill">שרת: מתחבר…</span>
     <span id="pPhone" class="pill">טלפון: ממתין</span>
@@ -154,6 +166,17 @@
   </section>
 
   <aside>
+    <div class="card">
+      <h2>קואורדינטות המיקום</h2>
+      <div class="coords">
+        <span>קו רוחב</span><span id="cLat">--</span>
+        <span>קו אורך</span><span id="cLon">--</span>
+        <span>דיוק</span><span id="cAcc">--</span>
+        <span>גובה</span><span id="cAlt">--</span>
+        <span>מהירות</span><span id="cSpd">--</span>
+      </div>
+    </div>
+
     <div class="card pair">
       <h2>חיבור הטלפון</h2>
       <div class="pair-row">
@@ -227,6 +250,7 @@
     </div>
   </aside>
 </main>
+<div id="ended" role="alert"><div>התכנית הסתיימה<small id="endedWhy"></small></div></div>
 
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -356,6 +380,8 @@ function connect() {
     if (t !== topic) return;
     let m;
     try { m = JSON.parse(payload.toString()); } catch (e) { return; }
+    if (m.cmd === "quit") { quit("נלחץ # בטלפון"); return; }
+    if (m.pos) showPos(m.pos);
     if (typeof m.h !== "number" || !isFinite(m.h)) return;
     target.h = ((m.h % 360) + 360) % 360;
     if (typeof m.b === "number" && isFinite(m.b)) target.b = Math.max(-180, Math.min(180, m.b));
@@ -381,6 +407,32 @@ function toggleDemo(on) {
 }
 $("demo").addEventListener("click", () => toggleDemo(!demo));
 $("newCode").addEventListener("click", () => { code = newCode(); showPairing(); subscribe(); lastMsg = 0; });
+
+// ---------- coordinates ----------
+function dms(v, pos, neg) {
+  const a = Math.abs(v), d = Math.floor(a), mf = (a - d) * 60, m = Math.floor(mf), s = (mf - m) * 60;
+  return `${v.toFixed(6)}°  ${d}°${String(m).padStart(2, "0")}'${s.toFixed(1).padStart(4, "0")}"${v >= 0 ? pos : neg}`;
+}
+function showPos(p) {
+  if (typeof p.lat !== "number" || typeof p.lon !== "number") return;
+  $("cLat").textContent = dms(p.lat, "N", "S");
+  $("cLon").textContent = dms(p.lon, "E", "W");
+  $("cAcc").textContent = typeof p.acc === "number" ? `±${p.acc} m` : "--";
+  $("cAlt").textContent = typeof p.alt === "number" ? `${p.alt} m` : "--";
+  $("cSpd").textContent = typeof p.spd === "number" ? `${(p.spd * 3.6).toFixed(1)} km/h` : "--";
+}
+
+// ---------- exit: Esc on the keyboard, or # on the phone ----------
+let ended = false;
+function quit(why) {
+  if (ended) return;
+  ended = true;
+  if (client) { client.end(true); client = null; }
+  $("endedWhy").textContent = why;
+  $("ended").classList.add("on");
+  setTimeout(() => window.close(), 400);   // closes the window when opened by compass.bat
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") quit("נלחץ Esc"); });
 
 showPairing();
 connect();
